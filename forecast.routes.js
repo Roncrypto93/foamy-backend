@@ -1,5 +1,5 @@
 const express = require("express");
-const { getForecastBySpotId } = require("../controllers/forecast.controller");
+const { getForecastBySpotId } = require("./forecast.controller");
 
 const router = express.Router();
 
