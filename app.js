@@ -8,8 +8,8 @@
 const express = require("express");
 const cors = require("cors");
 
-const spotsRoutes = require("./src/routes/spots.routes");
-const forecastRoutes = require("./src/routes/forecast.routes");
+const spotsRoutes = require("./spots.routes");
+const forecastRoutes = require("./forecast.routes");
 
 function createApp() {
   const app = express();
