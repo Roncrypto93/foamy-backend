@@ -39,4 +39,48 @@ function hasUsableWindData(data) {
   return Array.isArray(arr) && arr.some((v) => v !== null && v !== undefined);
 }
 
-function
+function getCurrentHourIndex(timezone) {
+  const hourStr = new Intl.DateTimeFormat("en-GB", {
+    timeZone: timezone,
+    hour: "2-digit",
+    hour12: false,
+  })
+    .formatToParts(new Date())
+    .find((p) => p.type === "hour").value;
+
+  let hour = parseInt(hourStr, 10);
+  if (hour === 24) hour = 0;
+  return hour;
+}
+
+async function fetchWindForecast(lat, lon) {
+  let data = await fetchModel(lat, lon, "icon_eu");
+  let modelUsed = "icon_eu";
+
+  if (!hasUsableWindData(data)) {
+    data = await fetchModel(lat, lon, "best_match");
+    modelUsed = "best_match";
+  }
+
+  const idx = getCurrentHourIndex(TIMEZONE);
+  const hourly = data.hourly || {};
+
+  const lastIdx = (hourly.wind_speed_10m?.length || 1) - 1;
+  const safeIdx = Math.min(idx, Math.max(lastIdx, 0));
+
+  return {
+    windSpeedKn: roundTo(hourly.wind_speed_10m?.[safeIdx], 1),
+    windGustsKn: roundTo(hourly.wind_gusts_10m?.[safeIdx], 1),
+    windDirectionDeg: roundTo(hourly.wind_direction_10m?.[safeIdx], 0),
+    timestamp: hourly.time?.[safeIdx] ?? new Date().toISOString(),
+    modelUsed,
+  };
+}
+
+function roundTo(value, decimals) {
+  if (value === undefined || value === null || Number.isNaN(value)) return null;
+  const factor = 10 ** decimals;
+  return Math.round(value * factor) / factor;
+}
+
+module.exports = { fetchWindForecast, getCurrentHourIndex };
