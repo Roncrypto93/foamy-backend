@@ -21,7 +21,7 @@ const path = require("path");
 const BASE_URL =
   process.env.OPEN_METEO_MARINE_URL || "https://marine-api.open-meteo.com/v1/marine";
 
-const COPERNICUS_SCRIPT = path.join(__dirname, "..", "..", "scripts", "fetch_copernicus_wave.py");
+const COPERNICUS_SCRIPT = path.join(__dirname, "fetch_copernicus_wave.py");
 const COPERNICUS_TIMEOUT_MS = Number(process.env.COPERNICUS_TIMEOUT_MS) || 20000;
 const COPERNICUS_DATASET_ID = process.env.COPERNICUS_DATASET_ID; // opzionale, override del default nello script
 const PYTHON_BIN = process.env.PYTHON_BIN || "python3";
