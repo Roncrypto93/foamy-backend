@@ -4,6 +4,9 @@
  * (es. PostgreSQL + PostGIS per query geospaziali), ma l'MVP
  * usa un array statico in-memory per semplicità e velocità di iterazione.
  *
+ * 19 spot (Frassanito e Alimini sono due spot distinti — spiagge separate
+ * lungo la costa, anche se vicine e spesso citate insieme nelle guide).
+ *
  * Campi:
  * - id: slug univoco usato come :spotId nelle route
  * - name: nome visualizzato
@@ -45,12 +48,25 @@ const SPOTS = [
     },
   },
   {
-    id: "frassanito-alimini",
-    name: "Frassanito / Alimini",
+    id: "frassanito",
+    name: "Frassanito",
     coast: "Adriatico",
     disciplines: ["wind", "kite", "wave"],
-    lat: 40.1897,
-    lon: 18.4691,
+    lat: 40.2261,
+    lon: 18.4584,
+    webcam_banner: {
+      provider: "SkylineWebcams",
+      url: "https://www.skylinewebcams.com/it/webcam/italia/puglia/lecce/spiaggia-di-frassanito-alimini.html",
+      embed_type: "iframe_redirect",
+    },
+  },
+  {
+    id: "alimini",
+    name: "Alimini",
+    coast: "Adriatico",
+    disciplines: ["wind", "kite", "wave"],
+    lat: 40.2519,
+    lon: 18.4506,
     webcam_banner: {
       provider: "Scuola Locale (Kite/Wind School Alimini)",
       url: "https://www.aliminikite.it/webcam-live",
