@@ -1,143 +1,91 @@
 /**
  * marineService.js
- * - fetchOpenMeteoMarine: chiamata reale all'API Marine di Open-Meteo
- *   (modello ECMWF WAM), che restituisce altezza/periodo/direzione onda.
- * - fetchCopernicusMarine: chiamata reale al Copernicus Marine Service (CMEMS)
- *   tramite il Copernicus Marine Toolbox ufficiale. Il toolbox è Python-only
- *   (è l'unico metodo di accesso programmatico supportato da Copernicus), quindi
- *   invochiamo scripts/fetch_copernicus_wave.py come sottoprocesso e ne
- *   parsiamo l'output JSON.
+ * Interroga l'endpoint /v1/marine di Open-Meteo (modello ECMWF) per
+ * altezza, periodo e direzione dell'onda.
  *
- * Requisiti runtime per Copernicus:
- *   - python3 nel PATH del server
- *   - `pip install copernicusmarine`
- *   - credenziali salvate con `copernicusmarine login` sulla macchina che
- *     esegue il backend (oppure env COPERNICUSMARINE_SERVICE_USERNAME/_PASSWORD)
+ * Stessi due bug corretti qui che erano in weatherService.js:
+ * 1) Un solo modello per chiamata (niente suffissi nei nomi dei campi).
+ * 2) Indice orario basato sull'ora locale corrente, non sempre mezzanotte.
  */
-
-const { spawn } = require("child_process");
-const path = require("path");
 
 const BASE_URL =
   process.env.OPEN_METEO_MARINE_URL || "https://marine-api.open-meteo.com/v1/marine";
 
-const COPERNICUS_SCRIPT = path.join(__dirname, "fetch_copernicus_wave.py");
-const COPERNICUS_TIMEOUT_MS = Number(process.env.COPERNICUS_TIMEOUT_MS) || 20000;
-const COPERNICUS_DATASET_ID = process.env.COPERNICUS_DATASET_ID; // opzionale, override del default nello script
-const PYTHON_BIN = process.env.PYTHON_BIN || "python3";
+const TIMEZONE = "Europe/Rome";
+const HOURLY_VARS = "wave_height,wave_period,wave_direction";
 
-/**
- * Recupera il forecast mare (onda) da Open-Meteo, modello ECMWF.
- * @param {number} lat
- * @param {number} lon
- */
-async function fetchOpenMeteoMarine(lat, lon) {
+async function fetchModel(lat, lon, model) {
   const params = new URLSearchParams({
     latitude: lat,
     longitude: lon,
-    hourly: "wave_height,wave_period,wave_direction",
-    timezone: "Europe/Rome",
-    models: "ecmwf_wam025,best_match",
+    hourly: HOURLY_VARS,
+    timezone: TIMEZONE,
+    models: model,
     forecast_days: 1,
   });
 
   const url = `${BASE_URL}?${params.toString()}`;
-
   const response = await fetch(url);
+
   if (!response.ok) {
     throw new Error(
-      `[marineService] Errore Open-Meteo marine (${response.status}): ${await response.text()}`
+      `[marineService] Errore Open-Meteo marine (${response.status}) per modello ${model}: ${await response.text()}`
     );
   }
 
-  const data = await response.json();
-  const idx = 0;
+  return response.json();
+}
+
+function hasUsableWaveData(data) {
+  const arr = data?.hourly?.wave_height;
+  return Array.isArray(arr) && arr.some((v) => v !== null && v !== undefined);
+}
+
+function getCurrentHourIndex(timezone) {
+  const hourStr = new Intl.DateTimeFormat("en-GB", {
+    timeZone: timezone,
+    hour: "2-digit",
+    hour12: false,
+  })
+    .formatToParts(new Date())
+    .find((p) => p.type === "hour").value;
+
+  let hour = parseInt(hourStr, 10);
+  if (hour === 24) hour = 0;
+  return hour;
+}
+
+async function fetchOpenMeteoMarine(lat, lon) {
+  let data = await fetchModel(lat, lon, "ecmwf_wam025");
+  let modelUsed = "ecmwf_wam025";
+
+  if (!hasUsableWaveData(data)) {
+    data = await fetchModel(lat, lon, "best_match");
+    modelUsed = "best_match";
+  }
+
+  const idx = getCurrentHourIndex(TIMEZONE);
   const hourly = data.hourly || {};
+  const lastIdx = (hourly.wave_height?.length || 1) - 1;
+  const safeIdx = Math.min(idx, Math.max(lastIdx, 0));
 
   return {
-    source: "open-meteo-ecmwf",
-    waveHeightM: roundTo(hourly.wave_height?.[idx], 2),
-    wavePeriodS: roundTo(hourly.wave_period?.[idx], 1),
-    waveDirectionDeg: roundTo(hourly.wave_direction?.[idx], 0),
-    timestamp: hourly.time?.[idx] ?? new Date().toISOString(),
+    source: modelUsed,
+    waveHeightM: roundTo(hourly.wave_height?.[safeIdx], 2),
+    wavePeriodS: roundTo(hourly.wave_period?.[safeIdx], 1),
+    waveDirectionDeg: roundTo(hourly.wave_direction?.[safeIdx], 0),
+    timestamp: hourly.time?.[safeIdx] ?? new Date().toISOString(),
   };
 }
 
 /**
- * Recupera altezza/periodo/direzione onda reali da Copernicus Marine Service
- * per il punto lat/lon, invocando il Toolbox Python come sottoprocesso.
- *
- * @param {number} lat
- * @param {number} lon
- * @returns {Promise<{source: string, waveHeightM: number|null, wavePeriodS: number|null, waveDirectionDeg: number|null, timestamp: string}>}
+ * Copernicus Marine non è ancora attivo su questo deploy (richiede Python,
+ * non presente sull'ambiente Node di Render). Restituiamo un risultato
+ * "vuoto" così il merge in forecast.controller.js ricade correttamente
+ * sul solo dato Open-Meteo/ECMWF sopra.
  */
-function fetchCopernicusMarine(lat, lon) {
-  return new Promise((resolve, reject) => {
-    const args = [COPERNICUS_SCRIPT, String(lat), String(lon)];
-    if (COPERNICUS_DATASET_ID) {
-      args.push("--dataset-id", COPERNICUS_DATASET_ID);
-    }
-
-    const child = spawn(PYTHON_BIN, args, { stdio: ["ignore", "pipe", "pipe"] });
-
-    let stdout = "";
-    let stderr = "";
-    let settled = false;
-
-    const timer = setTimeout(() => {
-      if (settled) return;
-      settled = true;
-      child.kill("SIGKILL");
-      reject(
-        new Error(
-          `[marineService] Timeout (${COPERNICUS_TIMEOUT_MS}ms) in attesa di Copernicus Marine per (${lat}, ${lon})`
-        )
-      );
-    }, COPERNICUS_TIMEOUT_MS);
-
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
-    child.stderr.on("data", (chunk) => {
-      stderr += chunk.toString();
-    });
-
-    child.on("error", (err) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      reject(new Error(`[marineService] Impossibile avviare ${PYTHON_BIN}: ${err.message}`));
-    });
-
-    child.on("close", (code) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-
-      if (!stdout.trim()) {
-        return reject(
-          new Error(
-            `[marineService] Nessun output da fetch_copernicus_wave.py (exit ${code}). stderr: ${stderr.slice(0, 500)}`
-          )
-        );
-      }
-
-      let parsed;
-      try {
-        parsed = JSON.parse(stdout.trim());
-      } catch (e) {
-        return reject(
-          new Error(`[marineService] Output non-JSON da Copernicus script: ${stdout.slice(0, 500)}`)
-        );
-      }
-
-      if (parsed.error) {
-        return reject(new Error(`[marineService] Copernicus Marine error (${parsed.error}): ${parsed.message}`));
-      }
-
-      resolve(parsed);
-    });
-  });
+async function fetchCopernicusMarine() {
+  throw new Error("Copernicus Marine non configurato su questo deploy (richiede Python).");
 }
 
 function roundTo(value, decimals) {
