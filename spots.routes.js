@@ -1,5 +1,5 @@
 const express = require("express");
-const SPOTS = require("../data/spots");
+const SPOTS = require("./spots");
 
 const router = express.Router();
 
