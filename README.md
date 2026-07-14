@@ -112,6 +112,22 @@ Esegue in parallelo:
 Risposta cachata in-memory (TTL configurabile via `.env`, default 15 minuti)
 per non sovraccaricare le API esterne.
 
+### `GET /api/forecast/:spotId/daily`
+Esempio: `GET /api/forecast/san-foca/daily`
+
+Forecast sui prossimi 3 giorni. Il vento viene sempre da Open-Meteo (massimi
+giornalieri). Il mare viene interrogato **per ciascun giorno** sul
+microservizio [foamy-copernicus](https://github.com/Roncrypto93/foamy-copernicus)
+(`GET /wave?lat=&lon=&date=YYYY-MM-DD`), che usa il dataset CMEMS
+`cmems_mod_med_wav_anfc_4.2km_PT1H-i` — un prodotto "analysis **and forecast**"
+con orizzonte di alcuni giorni, non solo l'istante presente. Se Copernicus non
+risponde per un dato giorno, quel giorno degrada al massimo giornaliero
+ECMWF di Open-Meteo (`sea.copernicusDegraded: true` per quel giorno).
+
+Richiede la variabile `COPERNICUS_SERVICE_URL` (default `http://localhost:5000`)
+puntata a un'istanza in esecuzione di foamy-copernicus. Non tocca né usa
+`marineService.js` — le condizioni attuali restano invariate.
+
 ## Note per la produzione
 
 - **Copernicus in produzione**: il server deve avere `python3` nel PATH e

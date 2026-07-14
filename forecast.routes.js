@@ -1,5 +1,6 @@
 const express = require("express");
 const { getForecastBySpotId } = require("./forecast.controller");
+const { getDailyForecastBySpotId } = require("./dailyForecast.controller");
 
 const router = express.Router();
 
@@ -9,5 +10,12 @@ const router = express.Router();
  * scala Douglas, e restituisce il JSON pulito comprensivo di webcam banner.
  */
 router.get("/:spotId", getForecastBySpotId);
+
+/**
+ * GET /api/forecast/:spotId/daily
+ * Forecast a 3 giorni: vento Open-Meteo + mare Copernicus reale per-giorno
+ * (fallback ECMWF se Copernicus non risponde per un dato giorno).
+ */
+router.get("/:spotId/daily", getDailyForecastBySpotId);
 
 module.exports = router;
