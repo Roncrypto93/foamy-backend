@@ -6,17 +6,17 @@
  */
 
 const NodeCache = require("node-cache");
-const SPOTS = require("../data/spots");
-const { fetchWindForecast } = require("../services/weatherService");
+const SPOTS = require("./spots");
+const { fetchWindForecast } = require("./weatherService");
 const {
   fetchOpenMeteoMarine,
   fetchCopernicusMarine,
-} = require("../services/marineService");
+} = require("./marineService");
 const {
   mergeMarineData,
   calculateWaveEnergyKJ,
   getDouglasSeaState,
-} = require("../utils/waveCalculations");
+} = require("./waveCalculations");
 
 // Cache in-memory per non martellare le API esterne ad ogni richiesta.
 // In scala futura: sostituire con Redis condiviso tra le istanze.
