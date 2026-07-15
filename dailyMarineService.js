@@ -15,7 +15,10 @@ const OPEN_METEO_FORECAST_URL =
 const OPEN_METEO_MARINE_URL =
   process.env.OPEN_METEO_MARINE_URL || "https://marine-api.open-meteo.com/v1/marine";
 const COPERNICUS_SERVICE_URL = process.env.COPERNICUS_SERVICE_URL || "http://localhost:5000";
-const COPERNICUS_TIMEOUT_MS = Number(process.env.COPERNICUS_TIMEOUT_MS) || 20000;
+// Timeout più permissivo di quello del subprocess Python (COPERNICUS_TIMEOUT_MS):
+// ogni chiamata a foamy-copernicus riapre un dataset CMEMS da zero, ed è lento
+// specialmente su hosting free-tier a risorse limitate.
+const COPERNICUS_DAILY_TIMEOUT_MS = Number(process.env.COPERNICUS_DAILY_TIMEOUT_MS) || 45000;
 const TIMEZONE = "Europe/Rome";
 const FORECAST_DAYS = 3;
 
@@ -53,7 +56,7 @@ async function fetchMarineDaily(lat, lon) {
 async function fetchCopernicusForDate(lat, lon, dateStr) {
   const params = new URLSearchParams({ lat, lon, date: dateStr });
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), COPERNICUS_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), COPERNICUS_DAILY_TIMEOUT_MS);
   try {
     const res = await fetch(`${COPERNICUS_SERVICE_URL}/wave?${params.toString()}`, {
       signal: controller.signal,
@@ -74,16 +77,23 @@ async function fetchCopernicusForDate(lat, lon, dateStr) {
 
 /**
  * Restituisce il forecast a 3 giorni: vento sempre da Open-Meteo, mare da
- * Copernicus reale dove disponibile (per-giorno, allSettled così un giorno
- * fallito non abbatte gli altri), altrimenti ECMWF via Open-Meteo.
+ * Copernicus reale dove disponibile. Le chiamate a Copernicus sono
+ * sequenziali (non in parallelo): ogni richiesta riapre un dataset CMEMS,
+ * costoso su un'istanza free-tier — farne 3 insieme le rallenta tutte fino
+ * a farle scadere in timeout. Un giorno fallito non abbatte gli altri.
  */
 async function fetchThreeDayForecast(lat, lon) {
   const [wind, ecmwfMarine] = await Promise.all([fetchWindDaily(lat, lon), fetchMarineDaily(lat, lon)]);
 
   const dates = wind.daily.time;
-  const copernicusResults = await Promise.allSettled(
-    dates.map((date) => fetchCopernicusForDate(lat, lon, date))
-  );
+  const copernicusResults = [];
+  for (const date of dates) {
+    try {
+      copernicusResults.push({ status: "fulfilled", value: await fetchCopernicusForDate(lat, lon, date) });
+    } catch (err) {
+      copernicusResults.push({ status: "rejected", reason: err });
+    }
+  }
 
   return dates.map((date, i) => {
     const ecmwfHeight = ecmwfMarine?.daily?.wave_height_max?.[i] ?? null;
