@@ -1,8 +1,8 @@
-const SPOTS = require("../src/data/spots");
+const SPOTS = require("./spots");
 
 describe("Database spot Puglia", () => {
-  test("contiene esattamente 18 spot come da specifica", () => {
-    expect(SPOTS).toHaveLength(18);
+  test("contiene esattamente 19 spot come da specifica", () => {
+    expect(SPOTS).toHaveLength(19);
   });
 
   test("ogni spot ha id univoco", () => {
@@ -26,13 +26,26 @@ describe("Database spot Puglia", () => {
     });
   });
 
-  test.each(SPOTS.map((s) => [s.id, s]))("%s ha un webcam_banner con provider e url", (id, spot) => {
-    expect(spot.webcam_banner).toBeDefined();
+  test.each(SPOTS.map((s) => [s.id, s]))("%s ha webcam_banner valido oppure esplicitamente assente (null)", (id, spot) => {
+    if (spot.webcam_banner === null) return; // nessuna webcam affidabile trovata per questo spot
     expect(typeof spot.webcam_banner.provider).toBe("string");
     expect(spot.webcam_banner.url).toMatch(/^https?:\/\//);
+    if (spot.webcam_banner.fallback) {
+      expect(typeof spot.webcam_banner.note).toBe("string");
+    }
   });
 
   test.each(SPOTS.map((s) => [s.id, s]))("%s appartiene a una costa valida", (id, spot) => {
     expect(["Adriatico", "Ionio", "Gargano"]).toContain(spot.coast);
+  });
+
+  test.each(SPOTS.map((s) => [s.id, s]))("%s ha spot_info completo (fondale, strutture, descrizione_tecnica)", (id, spot) => {
+    expect(spot.spot_info).toBeDefined();
+    expect(typeof spot.spot_info.fondale).toBe("string");
+    expect(spot.spot_info.fondale.length).toBeGreaterThan(0);
+    expect(typeof spot.spot_info.strutture).toBe("string");
+    expect(spot.spot_info.strutture.length).toBeGreaterThan(0);
+    expect(typeof spot.spot_info.descrizione_tecnica).toBe("string");
+    expect(spot.spot_info.descrizione_tecnica.length).toBeGreaterThan(20);
   });
 });

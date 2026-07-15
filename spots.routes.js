@@ -5,7 +5,7 @@ const router = express.Router();
 
 /**
  * GET /api/spots
- * Restituisce la lista completa dei 18 spot Puglia (senza dati forecast,
+ * Restituisce la lista completa dei 19 spot Puglia (senza dati forecast,
  * che vengono recuperati on-demand da /api/forecast/:spotId).
  */
 router.get("/", (req, res) => {
