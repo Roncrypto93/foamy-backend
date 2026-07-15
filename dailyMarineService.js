@@ -96,6 +96,10 @@ async function fetchThreeDayForecast(lat, lon) {
       ? { waveHeightM: ecmwfHeight, wavePeriodS: ecmwfPeriod, waveDirectionDeg: ecmwfDirection, source: "open-meteo-ecmwf" }
       : { ...copernicus.value, source: "copernicus-marine-cmems" };
 
+    if (copernicusDegraded) {
+      console.warn(`[dailyMarineService] Copernicus fallito per ${date} (${lat},${lon}):`, copernicus.reason?.message);
+    }
+
     return {
       date,
       windSpeedKn: wind.daily.wind_speed_10m_max[i],
@@ -103,6 +107,8 @@ async function fetchThreeDayForecast(lat, lon) {
       windDirectionDeg: wind.daily.wind_direction_10m_dominant[i],
       sea,
       copernicusDegraded,
+      // TEMP debug: rimuovere una volta diagnosticato il problema in produzione.
+      copernicusError: copernicusDegraded ? copernicus.reason?.message : undefined,
     };
   });
 }
