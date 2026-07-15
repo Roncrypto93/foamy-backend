@@ -143,6 +143,10 @@ ECMWF, non da Copernicus: 24 chiamate a foamy-copernicus (una per punto)
 sarebbero troppo lente sul free-tier (vedi note su `COPERNICUS_DAILY_TIMEOUT_MS`
 sopra) — è un compromesso deliberato tra risoluzione temporale e velocità.
 
+Stessa risoluzione anche per il vento in `windChart` (`{time, windSpeedKn,
+windGustsKn, windDirectionDeg}`, 24 punti), dalla stessa chiamata Open-Meteo
+già usata per i massimi giornalieri — nessuna chiamata aggiuntiva.
+
 ## Note per la produzione
 
 - **Copernicus in produzione**: il server deve avere `python3` nel PATH e

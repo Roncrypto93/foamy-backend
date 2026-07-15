@@ -40,7 +40,13 @@ const CHART_MOCK = [
   { time: "2026-07-14T06:00", waveHeightM: 0.9, wavePeriodS: 5.8 },
 ];
 
-const THREE_DAY_MOCK = { days: DAYS_MOCK, chart: CHART_MOCK };
+const WIND_CHART_MOCK = [
+  { time: "2026-07-14T00:00", windSpeedKn: 10.2, windGustsKn: 15.5, windDirectionDeg: 310 },
+  { time: "2026-07-14T03:00", windSpeedKn: 12.5, windGustsKn: 18.2, windDirectionDeg: 315 },
+  { time: "2026-07-14T06:00", windSpeedKn: 8.1, windGustsKn: 12.0, windDirectionDeg: 300 },
+];
+
+const THREE_DAY_MOCK = { days: DAYS_MOCK, chart: CHART_MOCK, windChart: WIND_CHART_MOCK };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -79,6 +85,9 @@ describe("GET /api/forecast/:spotId/daily", () => {
     expect(res.body.chart).toHaveLength(3);
     // energia primo punto: 0.5 * 1.1^2 * 6.5 * 10 = 39.325 -> 39
     expect(res.body.chart[0]).toEqual({ time: "2026-07-14T00:00", waveHeightM: 1.1, wavePeriodS: 6.5, waveEnergyKJ: 39 });
+
+    expect(res.body.windChart).toHaveLength(3);
+    expect(res.body.windChart[1]).toEqual({ time: "2026-07-14T03:00", windSpeedKn: 12.5, windGustsKn: 18.2, windDirectionDeg: 315 });
   });
 
   test("502 se il recupero del forecast fallisce del tutto", async () => {

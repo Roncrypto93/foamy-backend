@@ -27,6 +27,7 @@ async function fetchWindDaily(lat, lon) {
     latitude: lat,
     longitude: lon,
     daily: "wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant",
+    hourly: "wind_speed_10m,wind_gusts_10m,wind_direction_10m",
     wind_speed_unit: "kn",
     timezone: TIMEZONE,
     forecast_days: FORECAST_DAYS,
@@ -36,6 +37,23 @@ async function fetchWindDaily(lat, lon) {
     throw new Error(`[dailyMarineService] Errore Open-Meteo forecast daily (${res.status}): ${await res.text()}`);
   }
   return res.json();
+}
+
+// Punti ogni 3 ore per il grafico vento a barre: stessa chiamata già usata
+// per i massimi giornalieri, nessun costo aggiuntivo.
+function buildWindChartSeries(wind) {
+  const hourly = wind?.hourly;
+  if (!hourly?.time) return [];
+  const points = [];
+  for (let i = 0; i < hourly.time.length; i += 3) {
+    points.push({
+      time: hourly.time[i],
+      windSpeedKn: roundTo(hourly.wind_speed_10m?.[i], 1),
+      windGustsKn: roundTo(hourly.wind_gusts_10m?.[i], 1),
+      windDirectionDeg: roundTo(hourly.wind_direction_10m?.[i], 0),
+    });
+  }
+  return points;
 }
 
 // Un'unica chiamata all'endpoint Marine di Open-Meteo per onde (aggregato
@@ -119,6 +137,7 @@ async function fetchCopernicusForDate(lat, lon, dateStr) {
 async function fetchThreeDayForecast(lat, lon) {
   const [wind, ecmwfMarine] = await Promise.all([fetchWindDaily(lat, lon), fetchMarineDaily(lat, lon)]);
   const chart = buildChartSeries(ecmwfMarine);
+  const windChart = buildWindChartSeries(wind);
 
   const dates = wind.daily.time;
   const copernicusResults = [];
@@ -161,7 +180,7 @@ async function fetchThreeDayForecast(lat, lon) {
     };
   });
 
-  return { days, chart };
+  return { days, chart, windChart };
 }
 
 function roundTo(value, decimals) {

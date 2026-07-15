@@ -32,7 +32,7 @@ async function getDailyForecastBySpotId(req, res) {
   }
 
   try {
-    const { days, chart } = await fetchThreeDayForecast(spot.lat, spot.lon);
+    const { days, chart, windChart } = await fetchThreeDayForecast(spot.lat, spot.lon);
 
     const payload = {
       spot: { id: spot.id, name: spot.name, coast: spot.coast },
@@ -64,6 +64,14 @@ async function getDailyForecastBySpotId(req, res) {
         waveHeightM: p.waveHeightM,
         wavePeriodS: p.wavePeriodS,
         waveEnergyKJ: calculateWaveEnergyKJ(p.waveHeightM, p.wavePeriodS),
+      })),
+      // Stessa risoluzione a 3 ore del grafico onde, per il grafico vento a
+      // barre colorate per intensità.
+      windChart: windChart.map((p) => ({
+        time: p.time,
+        windSpeedKn: p.windSpeedKn,
+        windGustsKn: p.windGustsKn,
+        windDirectionDeg: p.windDirectionDeg,
       })),
       generatedAt: new Date().toISOString(),
       cache: false,
