@@ -13,7 +13,7 @@ const DAYS_MOCK = [
     windSpeedKn: 12.5,
     windGustsKn: 18.2,
     windDirectionDeg: 315,
-    sea: { waveHeightM: 1.4, wavePeriodS: 7.0, waveDirectionDeg: 55 },
+    sea: { waveHeightM: 1.4, wavePeriodS: 7.0, waveDirectionDeg: 55, waterTempC: 24.3, seaLevelM: 0.12 },
     copernicusDegraded: false,
   },
   {
@@ -21,7 +21,7 @@ const DAYS_MOCK = [
     windSpeedKn: 9.0,
     windGustsKn: 14.0,
     windDirectionDeg: 280,
-    sea: { waveHeightM: 0.8, wavePeriodS: 5.5, waveDirectionDeg: 40 },
+    sea: { waveHeightM: 0.8, wavePeriodS: 5.5, waveDirectionDeg: 40, waterTempC: 24.1, seaLevelM: 0.08 },
     copernicusDegraded: false,
   },
   {
@@ -29,7 +29,7 @@ const DAYS_MOCK = [
     windSpeedKn: 7.5,
     windGustsKn: 11.0,
     windDirectionDeg: 260,
-    sea: { waveHeightM: null, wavePeriodS: null, waveDirectionDeg: null },
+    sea: { waveHeightM: null, wavePeriodS: null, waveDirectionDeg: null, waterTempC: null, seaLevelM: null },
     copernicusDegraded: true,
   },
 ];
@@ -60,6 +60,8 @@ describe("GET /api/forecast/:spotId/daily", () => {
     expect(day0.sea.waveEnergyKJ).toBe(69);
     expect(day0.sea.seaState).toBe("Forza 4 - Molto Mosso");
     expect(day0.sea.copernicusDegraded).toBe(false);
+    expect(day0.sea.waterTempC).toBe(24.3);
+    expect(day0.sea.seaLevelM).toBe(0.12);
 
     const day2 = res.body.days[2];
     expect(day2.sea.copernicusDegraded).toBe(true);

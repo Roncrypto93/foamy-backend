@@ -38,11 +38,18 @@ async function fetchWindDaily(lat, lon) {
   return res.json();
 }
 
+// Un'unica chiamata all'endpoint Marine di Open-Meteo per onde (aggregato
+// giornaliero), temperatura superficiale del mare e livello del mare
+// (sea_level_height_msl, il proxy più vicino alla marea astronomica che
+// Open-Meteo espone: include marea + effetto barometro inverso + altro).
+// Questi ultimi due non hanno un aggregato giornaliero, quindi li prendiamo
+// dal dato orario, un valore a mezzogiorno locale per ciascuno dei 3 giorni.
 async function fetchMarineDaily(lat, lon) {
   const params = new URLSearchParams({
     latitude: lat,
     longitude: lon,
     daily: "wave_height_max,wave_period_max,wave_direction_dominant",
+    hourly: "sea_surface_temperature,sea_level_height_msl",
     timezone: TIMEZONE,
     forecast_days: FORECAST_DAYS,
   });
@@ -51,6 +58,13 @@ async function fetchMarineDaily(lat, lon) {
     throw new Error(`[dailyMarineService] Errore Open-Meteo marine daily (${res.status}): ${await res.text()}`);
   }
   return res.json();
+}
+
+function middayValue(hourly, variable, date) {
+  if (!hourly?.time) return null;
+  const idx = hourly.time.indexOf(`${date}T12:00`);
+  if (idx === -1) return null;
+  return hourly[variable]?.[idx] ?? null;
 }
 
 async function fetchCopernicusForDate(lat, lon, dateStr) {
@@ -105,6 +119,12 @@ async function fetchThreeDayForecast(lat, lon) {
     const sea = copernicusDegraded
       ? { waveHeightM: ecmwfHeight, wavePeriodS: ecmwfPeriod, waveDirectionDeg: ecmwfDirection, source: "open-meteo-ecmwf" }
       : { ...copernicus.value, source: "copernicus-marine-cmems" };
+
+    // Temperatura mare e livello del mare: Copernicus (dataset onde CMEMS)
+    // non li fornisce, quindi vengono sempre da Open-Meteo, indipendentemente
+    // dalla fonte scelta sopra per altezza/periodo/direzione onda.
+    sea.waterTempC = roundTo(middayValue(ecmwfMarine.hourly, "sea_surface_temperature", date), 1);
+    sea.seaLevelM = roundTo(middayValue(ecmwfMarine.hourly, "sea_level_height_msl", date), 2);
 
     if (copernicusDegraded) {
       console.warn(`[dailyMarineService] Copernicus fallito per ${date} (${lat},${lon}):`, copernicus.reason?.message);

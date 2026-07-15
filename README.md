@@ -128,6 +128,14 @@ Richiede la variabile `COPERNICUS_SERVICE_URL` (default `http://localhost:5000`)
 puntata a un'istanza in esecuzione di foamy-copernicus. Non tocca né usa
 `marineService.js` — le condizioni attuali restano invariate.
 
+Ogni giorno include anche `sea.waterTempC` (temperatura superficiale del
+mare) e `sea.seaLevelM` (livello del mare — il proxy più vicino alla marea
+astronomica che Open-Meteo espone: include marea + effetto barometro
+inverso + altre componenti, non è la marea pura). Entrambi vengono dalla
+stessa chiamata Marine di Open-Meteo usata per le onde ECMWF (valore alle
+12:00 locali di ciascun giorno), perché CMEMS/Copernicus qui fornisce solo
+altezza/periodo/direzione onda.
+
 ## Note per la produzione
 
 - **Copernicus in produzione**: il server deve avere `python3` nel PATH e
