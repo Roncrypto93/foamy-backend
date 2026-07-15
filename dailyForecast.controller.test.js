@@ -34,6 +34,14 @@ const DAYS_MOCK = [
   },
 ];
 
+const CHART_MOCK = [
+  { time: "2026-07-14T00:00", waveHeightM: 1.1, wavePeriodS: 6.5 },
+  { time: "2026-07-14T03:00", waveHeightM: 1.4, wavePeriodS: 7.0 },
+  { time: "2026-07-14T06:00", waveHeightM: 0.9, wavePeriodS: 5.8 },
+];
+
+const THREE_DAY_MOCK = { days: DAYS_MOCK, chart: CHART_MOCK };
+
 beforeEach(() => {
   jest.clearAllMocks();
 });
@@ -46,7 +54,7 @@ describe("GET /api/forecast/:spotId/daily", () => {
   });
 
   test("200 con 3 giorni, energia e scala Douglas calcolate per ciascuno", async () => {
-    fetchThreeDayForecast.mockResolvedValue(DAYS_MOCK);
+    fetchThreeDayForecast.mockResolvedValue(THREE_DAY_MOCK);
 
     const res = await request(app).get("/api/forecast/san-foca/daily");
 
@@ -67,6 +75,10 @@ describe("GET /api/forecast/:spotId/daily", () => {
     expect(day2.sea.copernicusDegraded).toBe(true);
     expect(day2.sea.waveEnergyKJ).toBeNull();
     expect(day2.sea.seaState).toBe("N/D");
+
+    expect(res.body.chart).toHaveLength(3);
+    // energia primo punto: 0.5 * 1.1^2 * 6.5 * 10 = 39.325 -> 39
+    expect(res.body.chart[0]).toEqual({ time: "2026-07-14T00:00", waveHeightM: 1.1, wavePeriodS: 6.5, waveEnergyKJ: 39 });
   });
 
   test("502 se il recupero del forecast fallisce del tutto", async () => {
@@ -79,7 +91,7 @@ describe("GET /api/forecast/:spotId/daily", () => {
   });
 
   test("una seconda richiesta per lo stesso spot usa la cache", async () => {
-    fetchThreeDayForecast.mockResolvedValue(DAYS_MOCK);
+    fetchThreeDayForecast.mockResolvedValue(THREE_DAY_MOCK);
 
     const first = await request(app).get("/api/forecast/bari-pane-pomodoro/daily");
     expect(first.status).toBe(200);

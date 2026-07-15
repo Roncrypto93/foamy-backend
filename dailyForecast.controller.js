@@ -32,7 +32,7 @@ async function getDailyForecastBySpotId(req, res) {
   }
 
   try {
-    const days = await fetchThreeDayForecast(spot.lat, spot.lon);
+    const { days, chart } = await fetchThreeDayForecast(spot.lat, spot.lon);
 
     const payload = {
       spot: { id: spot.id, name: spot.name, coast: spot.coast },
@@ -54,6 +54,16 @@ async function getDailyForecastBySpotId(req, res) {
           waterTempC: d.sea.waterTempC,
           seaLevelM: d.sea.seaLevelM,
         },
+      })),
+      // Serie a step di 3 ore (24 punti sui 3 giorni) per il grafico "Onda
+      // Idrodinamica": sempre da Open-Meteo/ECMWF, non da Copernicus (vedi
+      // nota in dailyMarineService.js sul perché non è praticabile a questa
+      // risoluzione sul free-tier).
+      chart: chart.map((p) => ({
+        time: p.time,
+        waveHeightM: p.waveHeightM,
+        wavePeriodS: p.wavePeriodS,
+        waveEnergyKJ: calculateWaveEnergyKJ(p.waveHeightM, p.wavePeriodS),
       })),
       generatedAt: new Date().toISOString(),
       cache: false,

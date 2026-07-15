@@ -39,17 +39,21 @@ async function fetchWindDaily(lat, lon) {
 }
 
 // Un'unica chiamata all'endpoint Marine di Open-Meteo per onde (aggregato
-// giornaliero), temperatura superficiale del mare e livello del mare
-// (sea_level_height_msl, il proxy più vicino alla marea astronomica che
-// Open-Meteo espone: include marea + effetto barometro inverso + altro).
-// Questi ultimi due non hanno un aggregato giornaliero, quindi li prendiamo
-// dal dato orario, un valore a mezzogiorno locale per ciascuno dei 3 giorni.
+// giornaliero + serie oraria), temperatura superficiale del mare e livello
+// del mare (sea_level_height_msl, il proxy più vicino alla marea astronomica
+// che Open-Meteo espone: include marea + effetto barometro inverso + altro).
+// La serie oraria di wave_height/wave_period alimenta anche il grafico a
+// step di 3 ore (vedi buildChartSeries): Copernicus reale non è praticabile
+// a questa risoluzione (24 chiamate da fino a 45s ciascuna sul free-tier
+// sarebbero troppo lente), quindi il grafico usa lo stesso ECMWF affidabile
+// già in uso per temperatura/marea. I valori di riepilogo giornaliero in
+// `days` restano invece da Copernicus reale dove disponibile.
 async function fetchMarineDaily(lat, lon) {
   const params = new URLSearchParams({
     latitude: lat,
     longitude: lon,
     daily: "wave_height_max,wave_period_max,wave_direction_dominant",
-    hourly: "sea_surface_temperature,sea_level_height_msl",
+    hourly: "wave_height,wave_period,sea_surface_temperature,sea_level_height_msl",
     timezone: TIMEZONE,
     forecast_days: FORECAST_DAYS,
   });
@@ -65,6 +69,22 @@ function middayValue(hourly, variable, date) {
   const idx = hourly.time.indexOf(`${date}T12:00`);
   if (idx === -1) return null;
   return hourly[variable]?.[idx] ?? null;
+}
+
+// Punti ogni 3 ore (step richiesto) per il grafico "Onda Idrodinamica":
+// altezza onda + periodo, dalla stessa serie oraria ECMWF già scaricata.
+function buildChartSeries(ecmwfMarine) {
+  const hourly = ecmwfMarine?.hourly;
+  if (!hourly?.time) return [];
+  const points = [];
+  for (let i = 0; i < hourly.time.length; i += 3) {
+    points.push({
+      time: hourly.time[i],
+      waveHeightM: roundTo(hourly.wave_height?.[i], 2),
+      wavePeriodS: roundTo(hourly.wave_period?.[i], 1),
+    });
+  }
+  return points;
 }
 
 async function fetchCopernicusForDate(lat, lon, dateStr) {
@@ -98,6 +118,7 @@ async function fetchCopernicusForDate(lat, lon, dateStr) {
  */
 async function fetchThreeDayForecast(lat, lon) {
   const [wind, ecmwfMarine] = await Promise.all([fetchWindDaily(lat, lon), fetchMarineDaily(lat, lon)]);
+  const chart = buildChartSeries(ecmwfMarine);
 
   const dates = wind.daily.time;
   const copernicusResults = [];
@@ -109,7 +130,7 @@ async function fetchThreeDayForecast(lat, lon) {
     }
   }
 
-  return dates.map((date, i) => {
+  const days = dates.map((date, i) => {
     const ecmwfHeight = ecmwfMarine?.daily?.wave_height_max?.[i] ?? null;
     const ecmwfPeriod = ecmwfMarine?.daily?.wave_period_max?.[i] ?? null;
     const ecmwfDirection = ecmwfMarine?.daily?.wave_direction_dominant?.[i] ?? null;
@@ -139,6 +160,8 @@ async function fetchThreeDayForecast(lat, lon) {
       copernicusDegraded,
     };
   });
+
+  return { days, chart };
 }
 
 function roundTo(value, decimals) {

@@ -136,6 +136,13 @@ stessa chiamata Marine di Open-Meteo usata per le onde ECMWF (valore alle
 12:00 locali di ciascun giorno), perché CMEMS/Copernicus qui fornisce solo
 altezza/periodo/direzione onda.
 
+La risposta include anche `chart`: 24 punti a step di 3 ore sui 3 giorni
+(`{time, waveHeightM, wavePeriodS, waveEnergyKJ}`), per grafici temporali
+più densi dei soli 3 punti giornalieri di `days`. Viene sempre da Open-Meteo
+ECMWF, non da Copernicus: 24 chiamate a foamy-copernicus (una per punto)
+sarebbero troppo lente sul free-tier (vedi note su `COPERNICUS_DAILY_TIMEOUT_MS`
+sopra) — è un compromesso deliberato tra risoluzione temporale e velocità.
+
 ## Note per la produzione
 
 - **Copernicus in produzione**: il server deve avere `python3` nel PATH e
