@@ -1,14 +1,14 @@
 /**
  * dailyForecast.controller.js
- * GET /api/forecast/:spotId/daily — forecast a 3 giorni, calcolando
- * energia onda e scala Douglas per ciascun giorno con le stesse formule
- * usate per le condizioni attuali. Usa la stessa cache condivisa
+ * GET /api/forecast/:spotId/daily — forecast settimanale (7 giorni),
+ * calcolando energia onda e scala Douglas per ciascun giorno con le stesse
+ * formule usate per le condizioni attuali. Usa la stessa cache condivisa
  * (forecastCache.js) delle condizioni attuali, ma con una chiave diversa
  * ("daily:" invece di "forecast:"), quindi le due restano indipendenti.
  */
 
 const SPOTS = require("./spots");
-const { fetchThreeDayForecast } = require("./dailyMarineService");
+const { fetchWeeklyForecast } = require("./dailyMarineService");
 const { calculateWaveEnergyKJ, getDouglasSeaState } = require("./waveCalculations");
 const forecastCache = require("./forecastCache");
 
@@ -30,7 +30,7 @@ async function getDailyForecastBySpotId(req, res) {
   }
 
   try {
-    const { days, chart, windChart } = await fetchThreeDayForecast(spot.lat, spot.lon);
+    const { days, chart, windChart } = await fetchWeeklyForecast(spot.lat, spot.lon);
 
     const payload = {
       spot: { id: spot.id, name: spot.name, coast: spot.coast },
@@ -53,7 +53,7 @@ async function getDailyForecastBySpotId(req, res) {
           seaLevelM: d.sea.seaLevelM,
         },
       })),
-      // Serie a step di 3 ore (24 punti sui 3 giorni) per il grafico "Onda
+      // Serie a step di 3 ore (56 punti sui 7 giorni) per il grafico "Onda
       // Idrodinamica": sempre da Open-Meteo/ECMWF, non da Copernicus (vedi
       // nota in dailyMarineService.js sul perché non è praticabile a questa
       // risoluzione sul free-tier).
@@ -81,7 +81,7 @@ async function getDailyForecastBySpotId(req, res) {
     console.error(`[dailyForecast.controller] Errore per spot ${spotId}:`, err);
     return res.status(502).json({
       error: "UPSTREAM_API_ERROR",
-      message: "Errore nel recupero del forecast a 3 giorni dalle API esterne.",
+      message: "Errore nel recupero del forecast settimanale dalle API esterne.",
       detail: err.message,
     });
   }

@@ -1,13 +1,20 @@
 /**
  * dailyMarineService.js
- * Dati per il forecast a 3 giorni (endpoint /api/forecast/:spotId/daily).
+ * Dati per il forecast settimanale (endpoint /api/forecast/:spotId/daily).
  * Non tocca weatherService.js / marineService.js: quelli restano
  * invariati e continuano ad alimentare solo le condizioni attuali.
  *
- * Per il mare, ogni giorno viene interrogato su foamy-copernicus (dataset
- * CMEMS anfc, che copre alcuni giorni di forecast reale) passando ?date=.
- * Se il servizio non risponde per un giorno, si degrada sul massimo
- * giornaliero ECMWF di Open-Meteo per quello stesso giorno.
+ * Per il mare, i primi COPERNICUS_REAL_DAYS giorni vengono interrogati su
+ * foamy-copernicus (dataset CMEMS anfc, che copre fino a 10 giorni di
+ * forecast reale) passando ?date=. Oltre quel limite si usa direttamente il
+ * massimo giornaliero ECMWF di Open-Meteo, senza nemmeno tentare Copernicus:
+ * ogni chiamata a foamy-copernicus impiega 15-45s sul free-tier ed è
+ * sequenziale (il parallelo sovraccarica l'istanza), quindi farlo per tutti
+ * e 7 i giorni porterebbe il caso peggiore a ~5 minuti. 3 giorni di dato
+ * reale (oggi/domani/dopodomani, quello che conta di più) restano un
+ * compromesso ragionevole; i restanti degradano su ECMWF, già segnalato
+ * come `copernicusDegraded`. Se non risponde entro il timeout, anche un
+ * giorno nei primi 3 degrada allo stesso modo.
  */
 
 const OPEN_METEO_FORECAST_URL =
@@ -20,7 +27,8 @@ const COPERNICUS_SERVICE_URL = process.env.COPERNICUS_SERVICE_URL || "http://loc
 // specialmente su hosting free-tier a risorse limitate.
 const COPERNICUS_DAILY_TIMEOUT_MS = Number(process.env.COPERNICUS_DAILY_TIMEOUT_MS) || 45000;
 const TIMEZONE = "Europe/Rome";
-const FORECAST_DAYS = 3;
+const FORECAST_DAYS = 7;
+const COPERNICUS_REAL_DAYS = Number(process.env.COPERNICUS_REAL_DAYS) || 3;
 
 async function fetchWindDaily(lat, lon) {
   const params = new URLSearchParams({
@@ -62,10 +70,11 @@ function buildWindChartSeries(wind) {
 // che Open-Meteo espone: include marea + effetto barometro inverso + altro).
 // La serie oraria di wave_height/wave_period alimenta anche il grafico a
 // step di 3 ore (vedi buildChartSeries): Copernicus reale non è praticabile
-// a questa risoluzione (24 chiamate da fino a 45s ciascuna sul free-tier
+// a questa risoluzione (56 chiamate da fino a 45s ciascuna sul free-tier
 // sarebbero troppo lente), quindi il grafico usa lo stesso ECMWF affidabile
 // già in uso per temperatura/marea. I valori di riepilogo giornaliero in
-// `days` restano invece da Copernicus reale dove disponibile.
+// `days` restano invece da Copernicus reale per i primi COPERNICUS_REAL_DAYS
+// giorni.
 async function fetchMarineDaily(lat, lon) {
   const params = new URLSearchParams({
     latitude: lat,
@@ -128,22 +137,27 @@ async function fetchCopernicusForDate(lat, lon, dateStr) {
 }
 
 /**
- * Restituisce il forecast a 3 giorni: vento sempre da Open-Meteo, mare da
- * Copernicus reale dove disponibile. Le chiamate a Copernicus sono
- * sequenziali (non in parallelo): ogni richiesta riapre un dataset CMEMS,
- * costoso su un'istanza free-tier — farne 3 insieme le rallenta tutte fino
- * a farle scadere in timeout. Un giorno fallito non abbatte gli altri.
+ * Restituisce il forecast settimanale: vento sempre da Open-Meteo, mare da
+ * Copernicus reale per i primi COPERNICUS_REAL_DAYS giorni (dove disponibile),
+ * ECMWF per il resto. Le chiamate a Copernicus sono sequenziali (non in
+ * parallelo): ogni richiesta riapre un dataset CMEMS, costoso su un'istanza
+ * free-tier — farne più insieme le rallenta tutte fino a farle scadere in
+ * timeout. Un giorno fallito non abbatte gli altri.
  */
-async function fetchThreeDayForecast(lat, lon) {
+async function fetchWeeklyForecast(lat, lon) {
   const [wind, ecmwfMarine] = await Promise.all([fetchWindDaily(lat, lon), fetchMarineDaily(lat, lon)]);
   const chart = buildChartSeries(ecmwfMarine);
   const windChart = buildWindChartSeries(wind);
 
   const dates = wind.daily.time;
   const copernicusResults = [];
-  for (const date of dates) {
+  for (let i = 0; i < dates.length; i++) {
+    if (i >= COPERNICUS_REAL_DAYS) {
+      copernicusResults.push({ status: "skipped" });
+      continue;
+    }
     try {
-      copernicusResults.push({ status: "fulfilled", value: await fetchCopernicusForDate(lat, lon, date) });
+      copernicusResults.push({ status: "fulfilled", value: await fetchCopernicusForDate(lat, lon, dates[i]) });
     } catch (err) {
       copernicusResults.push({ status: "rejected", reason: err });
     }
@@ -166,7 +180,7 @@ async function fetchThreeDayForecast(lat, lon) {
     sea.waterTempC = roundTo(middayValue(ecmwfMarine.hourly, "sea_surface_temperature", date), 1);
     sea.seaLevelM = roundTo(middayValue(ecmwfMarine.hourly, "sea_level_height_msl", date), 2);
 
-    if (copernicusDegraded) {
+    if (copernicus.status === "rejected") {
       console.warn(`[dailyMarineService] Copernicus fallito per ${date} (${lat},${lon}):`, copernicus.reason?.message);
     }
 
@@ -189,4 +203,4 @@ function roundTo(value, decimals) {
   return Math.round(value * factor) / factor;
 }
 
-module.exports = { fetchThreeDayForecast };
+module.exports = { fetchWeeklyForecast };

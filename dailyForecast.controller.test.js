@@ -2,7 +2,7 @@ const request = require("supertest");
 
 jest.mock("./dailyMarineService");
 
-const { fetchThreeDayForecast } = require("./dailyMarineService");
+const { fetchWeeklyForecast } = require("./dailyMarineService");
 const { createApp } = require("./app");
 
 const app = createApp();
@@ -32,6 +32,12 @@ const DAYS_MOCK = [
     sea: { waveHeightM: null, wavePeriodS: null, waveDirectionDeg: null, waterTempC: null, seaLevelM: null },
     copernicusDegraded: true,
   },
+  // Giorni 4-7: oltre COPERNICUS_REAL_DAYS, sempre degradati per design
+  // (vedi dailyMarineService.js) — qui bastano dati minimi plausibili.
+  { date: "2026-07-17", windSpeedKn: 10.0, windGustsKn: 15.0, windDirectionDeg: 270, sea: { waveHeightM: 0.6, wavePeriodS: 4.5, waveDirectionDeg: 250, waterTempC: 23.8, seaLevelM: 0.05 }, copernicusDegraded: true },
+  { date: "2026-07-18", windSpeedKn: 8.0, windGustsKn: 12.5, windDirectionDeg: 200, sea: { waveHeightM: 0.5, wavePeriodS: 4.2, waveDirectionDeg: 210, waterTempC: 23.9, seaLevelM: 0.03 }, copernicusDegraded: true },
+  { date: "2026-07-19", windSpeedKn: 14.0, windGustsKn: 20.0, windDirectionDeg: 330, sea: { waveHeightM: 1.0, wavePeriodS: 5.5, waveDirectionDeg: 320, waterTempC: 24.0, seaLevelM: 0.10 }, copernicusDegraded: true },
+  { date: "2026-07-20", windSpeedKn: 11.0, windGustsKn: 16.0, windDirectionDeg: 300, sea: { waveHeightM: 0.7, wavePeriodS: 4.8, waveDirectionDeg: 290, waterTempC: 24.2, seaLevelM: 0.07 }, copernicusDegraded: true },
 ];
 
 const CHART_MOCK = [
@@ -46,7 +52,7 @@ const WIND_CHART_MOCK = [
   { time: "2026-07-14T06:00", windSpeedKn: 8.1, windGustsKn: 12.0, windDirectionDeg: 300 },
 ];
 
-const THREE_DAY_MOCK = { days: DAYS_MOCK, chart: CHART_MOCK, windChart: WIND_CHART_MOCK };
+const WEEK_MOCK = { days: DAYS_MOCK, chart: CHART_MOCK, windChart: WIND_CHART_MOCK };
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -59,14 +65,14 @@ describe("GET /api/forecast/:spotId/daily", () => {
     expect(res.body.error).toBe("SPOT_NOT_FOUND");
   });
 
-  test("200 con 3 giorni, energia e scala Douglas calcolate per ciascuno", async () => {
-    fetchThreeDayForecast.mockResolvedValue(THREE_DAY_MOCK);
+  test("200 con 7 giorni, energia e scala Douglas calcolate per ciascuno", async () => {
+    fetchWeeklyForecast.mockResolvedValue(WEEK_MOCK);
 
     const res = await request(app).get("/api/forecast/san-foca/daily");
 
     expect(res.status).toBe(200);
     expect(res.body.spot.id).toBe("san-foca");
-    expect(res.body.days).toHaveLength(3);
+    expect(res.body.days).toHaveLength(7);
 
     const day0 = res.body.days[0];
     expect(day0.wind).toEqual({ speedKn: 12.5, gustsKn: 18.2, directionDeg: 315 });
@@ -91,7 +97,7 @@ describe("GET /api/forecast/:spotId/daily", () => {
   });
 
   test("502 se il recupero del forecast fallisce del tutto", async () => {
-    fetchThreeDayForecast.mockRejectedValue(new Error("Open-Meteo down"));
+    fetchWeeklyForecast.mockRejectedValue(new Error("Open-Meteo down"));
 
     const res = await request(app).get("/api/forecast/frigole/daily");
 
@@ -100,7 +106,7 @@ describe("GET /api/forecast/:spotId/daily", () => {
   });
 
   test("una seconda richiesta per lo stesso spot usa la cache", async () => {
-    fetchThreeDayForecast.mockResolvedValue(THREE_DAY_MOCK);
+    fetchWeeklyForecast.mockResolvedValue(WEEK_MOCK);
 
     const first = await request(app).get("/api/forecast/bari-pane-pomodoro/daily");
     expect(first.status).toBe(200);
@@ -110,6 +116,6 @@ describe("GET /api/forecast/:spotId/daily", () => {
     expect(second.status).toBe(200);
     expect(second.body.cache).toBe(true);
 
-    expect(fetchThreeDayForecast).toHaveBeenCalledTimes(1);
+    expect(fetchWeeklyForecast).toHaveBeenCalledTimes(1);
   });
 });
