@@ -8,7 +8,9 @@
  * possibile confermare visivamente ogni singolo link (ricerca web luglio
  * 2026), quindi vanno ricontrollati manualmente prima di considerarli
  * definitivi. `webcam_banner: null` dove non è stata trovata nessuna
- * webcam utilizzabile.
+ * webcam utilizzabile. `embed_type: "video_mp4"` (san-foca) indica un file
+ * video diretto da riprodurre con un tag <video>, non una pagina da aprire
+ * in un link — vedi `embed_type: "iframe_redirect"` per tutti gli altri.
  *
  * spot_info: fondale, strutture e descrizione tecnica da guide surf/kite
  * italiane (kitesurfing.it, localsalentokitesurf.com, kitesurfculture.com,
@@ -19,7 +21,7 @@
 const SPOTS = [
   {
     id: "san-foca", name: "San Foca (Li Marangi)", coast: "Adriatico", disciplines: ["wave", "kite"], lat: 40.3283, lon: 18.3639,
-    webcam_banner: { provider: "Wind24 (Porto San Foca)", url: "https://www.wind24.it/sanfoca/webcam/Porto-0024", embed_type: "iframe_redirect" },
+    webcam_banner: { provider: "Webcam Li Marangi", url: "http://ffmpeg.pwad.it/videos/sanfoca.mp4?t=20230517165515", embed_type: "video_mp4", note: "Link http:// (non https) e un timestamp fisso nell'URL: potrebbe essere una clip registrata una tantum invece di uno stream live aggiornato — verificare che il video cambi nel tempo." },
     spot_info: {
       fondale: "Sabbia, con alcune formazioni rocciose che creano piscine naturali vicino riva",
       strutture: "Scuole di kite (es. Sea and Soul presso Lido Buenaventura), rimessaggio attrezzatura, ristoro e stabilimento balneare",
@@ -28,7 +30,7 @@ const SPOTS = [
   },
   {
     id: "torre-dellorso", name: "Torre dell'Orso", coast: "Adriatico", disciplines: ["wave"], lat: 40.2717, lon: 18.4235,
-    webcam_banner: { provider: "SkylineWebcams (fallback: Alimini, ~7km)", url: "https://www.skylinewebcams.com/en/webcam/italia/puglia/lecce/spiaggia-di-alimini.html", embed_type: "iframe_redirect", fallback: true, note: "Nessuna webcam trovata direttamente su Torre dell'Orso: mostriamo quella di Alimini, la più vicina disponibile." },
+    webcam_banner: null,
     spot_info: {
       fondale: "Misto — sabbia finissima con formazioni rocciose (gli scogli delle 'Due Sorelle') e scogli sommersi",
       strutture: "Scuole di kitesurf in zona (es. Kite Salento); consigliata cautela per gli scogli",
@@ -73,7 +75,7 @@ const SPOTS = [
   },
   {
     id: "vieste-scialmarino", name: "Vieste (Spiaggia di Scialmarino)", coast: "Gargano", disciplines: ["wind", "kite"], lat: 41.9036, lon: 16.144,
-    webcam_banner: { provider: "GarganSurf (fallback: Cala Azzurra, ~4-5km)", url: "https://garganosurf.com/it/servizi/webcam/", embed_type: "iframe_redirect", fallback: true, note: "Nessuna webcam dedicata trovata su Scialmarino: mostriamo quella di Cala Azzurra, zona surf di Vieste." },
+    webcam_banner: { provider: "Vedetta.org", url: "https://vedetta.org/webcam/italia/puglia/foggia/vieste/", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbioso e digradante, protetto a nord da scogliere",
       strutture: "Scuola presso il Villaggio Oasi Vieste, noleggio attrezzatura",
@@ -91,7 +93,7 @@ const SPOTS = [
   },
   {
     id: "gallipoli-baia-verde", name: "Gallipoli (Baia Verde)", coast: "Ionio", disciplines: ["wind", "kite", "wave"], lat: 40.0389, lon: 17.9836,
-    webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/en/webcam/italia/puglia/lecce/spiaggia-gallipoli.html", embed_type: "iframe_redirect" },
+    webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/it/webcam/italia/puglia/lecce/gallipoli.html", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbioso, spiaggia larga con facile accesso",
       strutture: "Scuola Salento Coast Ovest dal 2004, noleggio presso Ecoresort Le Sirenè",
@@ -100,7 +102,7 @@ const SPOTS = [
   },
   {
     id: "campomarino-curvone", name: "Campomarino di Maruggio (Il Curvone)", coast: "Ionio", disciplines: ["wave"], lat: 40.3928, lon: 17.6119,
-    webcam_banner: { provider: "La Bahia del Sol (Marina di Lizzano, stesso tratto costiero)", url: "https://www.labahiadelsol.it/webcam-live/", embed_type: "iframe_redirect", fallback: true, note: "'Il Curvone' è catalogato come spot di Marina di Lizzano: la webcam è praticamente sullo stesso tratto di costa." },
+    webcam_banner: { provider: "Vedetta.org (Torretta Mare)", url: "https://vedetta.org/webcam/italia/puglia/taranto/torretta-mare/", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Roccia/Misto — dato non pienamente univoco tra le fonti consultate",
       strutture: "Dato non verificato: nessuna scuola dedicata trovata; presente il lido Bahia del Sol nella zona adiacente",
@@ -136,7 +138,7 @@ const SPOTS = [
   },
   {
     id: "monopoli-capitolo", name: "Monopoli (Capitolo)", coast: "Adriatico", disciplines: ["wind", "kite", "wave"], lat: 40.9333, lon: 17.2667,
-    webcam_banner: { provider: "PugliaWebcam (Lido Bambù)", url: "https://pugliawebcam.it/webcam/monopoli-capitolo/en", embed_type: "iframe_redirect" },
+    webcam_banner: { provider: "IPCamLive", url: "https://www.ipcamlive.com/64a4267102d72", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Misto sabbia-roccia in gran parte dell'area",
       strutture: "Numerosi lidi attrezzati (noleggio lettini, docce, bar, ristoranti, parcheggio privato)",
@@ -145,7 +147,7 @@ const SPOTS = [
   },
   {
     id: "torre-guaceto", name: "Torre Guaceto", coast: "Adriatico", disciplines: ["kite"], lat: 40.7167, lon: 17.8,
-    webcam_banner: { provider: "Wind24 (Torre Guaceto)", url: "https://win.wind24.it/torreguaceto", embed_type: "iframe_redirect" },
+    webcam_banner: { provider: "SkylineWebcams (Guna Beach)", url: "https://www.skylinewebcams.com/it/webcam/italia/puglia/brindisi/guna-beach.html", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbia",
       strutture: "Scuola Kite Salento (corsi IKO, noleggio, kite camp), Sporting Club Torre Guaceto, struttura balneare Guna Beach partner",
@@ -172,7 +174,7 @@ const SPOTS = [
   },
   {
     id: "peschici-baia-manaccora", name: "Peschici (Baia di Manaccora)", coast: "Gargano", disciplines: ["wind", "kite"], lat: 41.95, lon: 16.0167,
-    webcam_banner: { provider: "Windy (da verificare)", url: "https://www.windy.com/it/-Webcam/Italia/Puglia/Peschici/Baia-di-Manaccora/webcams/1216718159", embed_type: "iframe_redirect", fallback: true, note: "Indicizzata come attiva da più portali (worldcam.eu, vedetta.org) ma non confermata visivamente in questa ricerca. Controllare manualmente." },
+    webcam_banner: { provider: "Vedetta.org", url: "https://vedetta.org/webcam/italia/puglia/foggia/peschici-manaccora/", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbia fine, con scogliere/promontori rocciosi ai lati della baia",
       strutture: "Villaggio Baia di Manaccora con bar/ristorante, corsi di windsurf e kitesurf",
@@ -181,7 +183,7 @@ const SPOTS = [
   },
   {
     id: "marina-di-lesina", name: "Marina di Lesina", coast: "Gargano", disciplines: ["wind", "kite"], lat: 41.8833, lon: 15.3667,
-    webcam_banner: null,
+    webcam_banner: { provider: "Vedetta.org", url: "https://vedetta.org/webcam/italia/puglia/foggia/lesina-comune1/", embed_type: "iframe_redirect", note: "La webcam inquadra il comune/lungomare di Lesina; lo spot kite reale è sul Lago di Lesina, laguna a sud della marina (vedi spot_info)." },
     spot_info: {
       fondale: "Bacino lacustre salmastro (Lago di Lesina), profondità massima 1,5m, flat water — non è uno spot di mare aperto",
       strutture: "Gargano Lake Kite School con pontile di partenza e servizio di recupero in barca (safety boat)",
