@@ -25,7 +25,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbia, con alcune formazioni rocciose che creano piscine naturali vicino riva",
       strutture: "Scuole di kite (es. Sea and Soul presso Lido Buenaventura), rimessaggio attrezzatura, ristoro e stabilimento balneare",
-      descrizione_tecnica: "Uno dei migliori spot kite della costa adriatica salentina, lavora con Tramontana (N). Baia semi-riparata con fondale sabbioso sicuro, adatta a principianti e intermedi; con vento forte offre condizioni anche per esperti."
+      descrizione_tecnica: "Lavora con Tramontana (N). Fondale sabbioso sicuro: adatto a principianti ed esperti."
     }
   },
   {
@@ -34,7 +34,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Misto — sabbia finissima con formazioni rocciose (gli scogli delle 'Due Sorelle') e scogli sommersi",
       strutture: "Scuole di kitesurf in zona (es. Kite Salento); consigliata cautela per gli scogli",
-      descrizione_tecnica: "Baia riparata da falesie bianche, lavora bene solo con venti settentrionali (Tramontana/Maestrale). La presenza di scogli affioranti la rende più adatta a livello intermedio. A luglio-agosto il kite è di fatto sconsigliato per l'affollamento turistico."
+      descrizione_tecnica: "Lavora solo con venti settentrionali (Tramontana/Maestrale). Scogli affioranti: livello intermedio."
     }
   },
   {
@@ -43,7 +43,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Reef/Roccia — piccole rocce sommerse vicino riva, da attenzionare in ingresso e in rientro",
       strutture: "Scuola kite AK con base estiva presso il VOI Resort Alimini, noleggio attrezzatura",
-      descrizione_tecnica: "Spot molto rinomato, lavora bene con Tramontana/NNW (onda) e con Scirocco (S) per onde di qualità, esposizione prevalentemente side-onshore. Consigliato a livello intermedio/esperto per la presenza del reef."
+      descrizione_tecnica: "Lavora con Tramontana/NNW e Scirocco (S). Reef roccioso: livello intermedio/esperto."
     }
   },
   {
@@ -52,7 +52,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbia, con tratti misti vicino alla foce dei laghi (dettaglio non pienamente verificato)",
       strutture: "Scuole di kite/windsurf (es. AK presso VOI Resort), ampio parcheggio essendo area turistica",
-      descrizione_tecnica: "Lavora bene con Tramontana (N) e Scirocco (S), come la vicina Frassanito. Adatto a tutti i livelli nelle zone più riparate vicino ai laghi, mentre il tratto di mare aperto richiede più esperienza."
+      descrizione_tecnica: "Lavora con Tramontana (N) e Scirocco (S). Adatto a tutti i livelli nelle zone riparate."
     }
   },
   {
@@ -61,7 +61,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbia, con pochi scogli",
       strutture: "Servizio di salvataggio stagionale (1 giugno - 15 settembre); scuole/noleggi dedicati non confermati con fonte diretta",
-      descrizione_tecnica: "Funziona con vento di Maestrale side-shore, adatto a freeride/slalom con onde fino a 3,5m nei periodi più intensi. In estate condizioni più leggere, con onda occasionale a fine stagione."
+      descrizione_tecnica: "Lavora con Maestrale side-shore. Onde fino a 3,5m nei periodi più intensi: freeride/slalom."
     }
   },
   {
@@ -70,7 +70,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Misto — reef roccioso nella Baia Grande che forma l'onda, sabbioso nella Laguna della Strea",
       strutture: "Scuole di kitesurf (es. Locals Crew ASD); lancio da spiaggia consentito solo fuori stagione balneare per ordinanza",
-      descrizione_tecnica: "Funziona con venti da SSE a ONO (Scirocco-Maestrale-Ponente). Nella Baia Grande l'onda si forma sul reef, sconsigliata ai principianti; nella Laguna della Strea acqua piatta ideale per freestyle a tutti i livelli."
+      descrizione_tecnica: "Lavora con Scirocco-Maestrale-Ponente (SSE-ONO). Reef per esperti; laguna piatta per tutti i livelli."
     }
   },
   {
@@ -79,7 +79,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbioso e digradante, protetto a nord da scogliere",
       strutture: "Scuola presso il Villaggio Oasi Vieste, noleggio attrezzatura",
-      descrizione_tecnica: "Funziona con venti termici da nord e sud, moderati e costanti; periodo migliore maggio-giugno e settembre. Baia riparata dalle scogliere, adatta soprattutto a principianti e livello intermedio."
+      descrizione_tecnica: "Lavora con termiche da nord e sud, moderate e costanti. Baia riparata: principianti/intermedi."
     }
   },
   {
@@ -88,7 +88,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbia bianca fine, bassa, protetta da una fila di isolotti/scogli paralleli alla costa",
       strutture: "Scuola kitesurf/windsurf attiva tutto l'anno (Lega Navale Italiana), gommone di assistenza in estate",
-      descrizione_tecnica: "Funziona con Scirocco invernale (15-35 nodi) e vento termico da Ovest in estate (15-18 nodi). Acqua piatta e bassa, ideale per freeride/freestyle/big air. Adatto a tutti i livelli."
+      descrizione_tecnica: "Lavora con Scirocco invernale (15-35 nodi) e termica da Ovest in estate. Acqua piatta: tutti i livelli."
     }
   },
   {
@@ -97,7 +97,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbioso, spiaggia larga con facile accesso",
       strutture: "Scuola Salento Coast Ovest dal 2004, noleggio presso Ecoresort Le Sirenè",
-      descrizione_tecnica: "Funziona con vento da NO a S; le mareggiate invernali generano onde fino a 2m. Spot cittadino adatto a principianti in condizioni normali. Lancio da spiaggia vietato in estate (giu-set) per ordinanza balneare."
+      descrizione_tecnica: "Lavora con vento da NO a S. Spot cittadino, adatto a principianti in condizioni normali."
     }
   },
   {
@@ -106,7 +106,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Roccia/Misto — dato non pienamente univoco tra le fonti consultate",
       strutture: "Dato non verificato: nessuna scuola dedicata trovata; presente il lido Bahia del Sol nella zona adiacente",
-      descrizione_tecnica: "Lavora bene con Scirocco e con vento da Est-Nord-Est. Onde alte e potenti sul fondale roccioso, adatto a livello intermedio/esperto — sconsigliato ai principianti per la scogliera."
+      descrizione_tecnica: "Lavora con Scirocco ed Est-Nord-Est. Onde potenti su roccia: livello intermedio/esperto."
     }
   },
   {
@@ -115,7 +115,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbia, fondale basso e digradante per 50-70 metri dalla riva",
       strutture: "Scuola kite a 'La Strea' (laguna a sud, acqua piatta), hotel, bar/ristoranti, ampio parcheggio",
-      descrizione_tecnica: "Costa ionica esposta soprattutto a Maestrale (NW), velocità media ~11 nodi con raffiche fino a 22. Fondale sabbioso e basso adatto a principianti vicino riva; la laguna della Strea è ideale per il freestyle."
+      descrizione_tecnica: "Lavora con Maestrale (NW), media ~11 nodi. Principianti vicino riva; laguna ideale per freestyle."
     }
   },
   {
@@ -124,7 +124,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Misto — piccola baia sabbiosa con alcune rocce che affiorano vicino alla riva",
       strutture: "Scuola kite Salento Coast Ovest Kitesurf, attiva tutto l'anno",
-      descrizione_tecnica: "Unico spot della costa ionica del Salento navigabile con venti da Nord/Nord-Est. Onde lunghe non troppo alte. La presenza di rocce affioranti lo rende più adatto a livello intermedio/esperto."
+      descrizione_tecnica: "Lavora con Nord/Nord-Est. Rocce affioranti: livello intermedio/esperto."
     }
   },
   {
@@ -133,7 +133,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbia (dettagli su profondità e pendenza non pienamente verificati)",
       strutture: "Portale locale TanaOnda dedicato a surf/windsurf/kite in zona; spiaggia cittadina con lungomare",
-      descrizione_tecnica: "Dato non pienamente verificato: le fonti non specificano con certezza i venti ideali. Spot cittadino sul litorale nord di Bari, generalmente considerato accessibile anche a principianti per la vicinanza ai servizi urbani."
+      descrizione_tecnica: "Venti ideali non confermati dalle fonti. Spot cittadino, accessibile anche a principianti."
     }
   },
   {
@@ -142,7 +142,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Misto sabbia-roccia in gran parte dell'area",
       strutture: "Numerosi lidi attrezzati (noleggio lettini, docce, bar, ristoranti, parcheggio privato)",
-      descrizione_tecnica: "La costa beneficia di venti di Tramontana e Grecale, con beach-break/reef-break tecnici. Esposizione e livello consigliato non pienamente dettagliati dalle fonti — presumibile onshore, frequentato anche da rider esperti quando il vento spinge l'onda a riva."
+      descrizione_tecnica: "Lavora con Tramontana e Grecale. Beach/reef-break tecnico, frequentato anche da rider esperti."
     }
   },
   {
@@ -151,7 +151,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbia",
       strutture: "Scuola Kite Salento (corsi IKO, noleggio, kite camp), Sporting Club Torre Guaceto, struttura balneare Guna Beach partner",
-      descrizione_tecnica: "Vento a raffiche, costante, direzione side-shore/side-onshore da Ovest ed Est; funziona da 10-20 fino a 20-40 nodi. Stagione migliore maggio-ottobre. Baia riparata adatta a principianti, ma frequentata anche da atleti di alto livello."
+      descrizione_tecnica: "Lavora da Ovest ed Est, 10-40 nodi. Baia riparata: principianti, ma frequentata anche da esperti."
     }
   },
   {
@@ -160,7 +160,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbia",
       strutture: "Spiaggia attrezzata con bar, ristorante, docce, parcheggio gratuito; scuola kite dedicata (Scuola Kite Lecce, area riservata presso il 'Molo Tredici' in estate)",
-      descrizione_tecnica: "Spot ventilato dall'effetto Venturi del Canale d'Otranto. Da maggio a settembre vento dominante Maestrale e Tramontana; con Scirocco/SE si genera termica da est (14-25 nodi). Fondale sabbioso e spiaggia poco affollata: ottimo spot per principianti."
+      descrizione_tecnica: "Lavora con Maestrale/Tramontana, termica da Est con Scirocco. Fondale sabbioso: ottimo per principianti."
     }
   },
   {
@@ -169,7 +169,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Misto — sabbioso nella zona centrale (Bandiera Blu), più roccioso verso sud in direzione Pilone/Rosa Marina",
       strutture: "SKP – Kitesurf Puglia School attiva; la storica scuola windsurf Birinbau risulta chiusa da alcuni anni",
-      descrizione_tecnica: "Funziona tutto l'anno con venti da NNW (Maestrale), e in estate/primavera anche con termica da est. Il porto turistico offre riparo parziale con Maestrale forte, adatto a principianti in quelle condizioni; con vento forte frequentato anche da intermedi ed esperti."
+      descrizione_tecnica: "Lavora con Maestrale (NNW) tutto l'anno, termica da Est in estate. Porto riparato: principianti."
     }
   },
   {
@@ -178,7 +178,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Sabbia fine, con scogliere/promontori rocciosi ai lati della baia",
       strutture: "Villaggio Baia di Manaccora con bar/ristorante, corsi di windsurf e kitesurf",
-      descrizione_tecnica: "Spot esposto a venti da NW e SE (termico) per condizioni freestyle in estate. Con vento da N si generano onde non consigliate se non a livello molto esperto, per via di due punte rocciose che delimitano la baia."
+      descrizione_tecnica: "Lavora con NW e termica SE. Con vento da N onde solo per esperti (baia rocciosa)."
     }
   },
   {
@@ -187,7 +187,7 @@ const SPOTS = [
     spot_info: {
       fondale: "Bacino lacustre salmastro (Lago di Lesina), profondità massima 1,5m, flat water — non è uno spot di mare aperto",
       strutture: "Gargano Lake Kite School con pontile di partenza e servizio di recupero in barca (safety boat)",
-      descrizione_tecnica: "Attenzione geografica: lo spot reale è sul Lago di Lesina, laguna interna a sud della marina, non sul mare aperto. Acqua piatta, fondale basso e venti ideali da Sud, Sud-Ovest e Ovest. Ideale per principianti e freestyle grazie all'assenza di onde."
+      descrizione_tecnica: "Spot reale sul Lago di Lesina (laguna). Lavora con Sud/Sud-Ovest/Ovest, acqua piatta: principianti."
     }
   },
 ];
