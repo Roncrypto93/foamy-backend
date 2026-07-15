@@ -117,8 +117,6 @@ async function fetchThreeDayForecast(lat, lon) {
       windDirectionDeg: wind.daily.wind_direction_10m_dominant[i],
       sea,
       copernicusDegraded,
-      // TEMP debug: rimuovere una volta diagnosticato il problema in produzione.
-      copernicusError: copernicusDegraded ? copernicus.reason?.message : undefined,
     };
   });
 }

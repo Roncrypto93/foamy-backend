@@ -51,7 +51,6 @@ async function getDailyForecastBySpotId(req, res) {
           seaState: getDouglasSeaState(d.sea.waveHeightM),
           source: d.sea.source,
           copernicusDegraded: d.copernicusDegraded,
-          copernicusError: d.copernicusError,
         },
       })),
       generatedAt: new Date().toISOString(),
