@@ -52,51 +52,64 @@ nella risposta.
 npm test
 ```
 
-Suite Jest + Supertest, tutte le chiamate esterne (Open-Meteo, Copernicus)
-sono mockate — i test girano offline e in modo deterministico:
+Suite Jest + Supertest, tutte le chiamate esterne (Open-Meteo, Copernicus,
+Upstash) sono mockate — i test girano offline e in modo deterministico:
 
-- `__tests__/waveCalculations.test.js` — unit test puri sulla logica di
-  media, formula energia onda, mappatura Scala Douglas (inclusi i valori
-  esattamente sui confini tra le fasce).
-- `__tests__/spots.data.test.js` — integrità del database dei 18 spot
-  (id univoci, coordinate dentro i confini pugliesi, discipline valide,
-  webcam_banner presente).
-- `__tests__/forecast.controller.test.js` — endpoint end-to-end via
-  Supertest: risposta 200 con merge corretto, 404 spot inesistente,
-  degrado a solo-ECMWF se Copernicus fallisce, 502 se fallisce anche il
-  vento, comportamento della cache in-memory.
+- `waveCalculations.test.js` — unit test puri sulla logica di media, formula
+  energia onda, mappatura Scala Douglas (inclusi i valori esattamente sui
+  confini tra le fasce).
+- `spots.data.test.js` — integrità del database dei 19 spot (id univoci,
+  coordinate dentro i confini pugliesi, discipline valide, webcam_banner
+  valido o esplicitamente `null`, spot_info completo).
+- `forecast.controller.test.js` — endpoint condizioni attuali end-to-end via
+  Supertest: risposta 200 con merge corretto, 404 spot inesistente, degrado
+  a solo-ECMWF se Copernicus fallisce, 502 se fallisce anche il vento,
+  comportamento della cache.
+- `dailyForecast.controller.test.js` — endpoint `/daily` end-to-end: 3
+  giorni con energia/Scala Douglas calcolate, `chart`/`windChart` a step di
+  3 ore, 404, 502, cache.
+- `forecastCache.test.js` — cache a due livelli: TTL di default e da env,
+  comportamento con/senza Upstash configurato, degrado con grazia se
+  Upstash non risponde.
 
 ## Architettura
 
+Tutti i file sono nella root del repo (nessuna sotto-cartella `src/`):
+
 ```
-server.js                        # entry point: crea l'app e chiama listen()
-app.js                            # factory Express (separata per essere testabile)
-scripts/
-  fetch_copernicus_wave.py       # script Python: Copernicus Marine Toolbox ufficiale
-  requirements.txt
-src/
-  data/spots.js                  # "database" mock dei 18 spot Puglia
-  services/
-    weatherService.js            # fetch vento da Open-Meteo (ICON-EU/AROME)
-    marineService.js             # fetch mare: Open-Meteo ECMWF + Copernicus (via sottoprocesso Python)
-  utils/
-    waveCalculations.js          # media mare, energia onda (kJ), scala Douglas
-  controllers/
-    forecast.controller.js       # orchestrazione, fallback, caching in-memory
-  routes/
-    spots.routes.js              # GET /api/spots
-    forecast.routes.js           # GET /api/forecast/:spotId
-__tests__/                        # suite Jest + Supertest
+server.js                  # entry point: crea l'app e chiama listen()
+app.js                      # factory Express (separata per essere testabile)
+fetch_copernicus_wave.py   # script Python: Copernicus Marine Toolbox ufficiale
+                            # (non ancora invocato da marineService.js, vedi sotto)
+requirements.txt
+spots.js                    # "database" mock dei 19 spot Puglia + spot_info
+spots.routes.js             # GET /api/spots
+weatherService.js           # fetch vento da Open-Meteo (ICON-EU/AROME) — condizioni attuali
+marineService.js            # fetch mare Open-Meteo ECMWF — condizioni attuali;
+                            # fetchCopernicusMarine() qui è uno stub che fallisce
+                            # sempre (nessuna integrazione Copernicus per le
+                            # condizioni attuali, solo per /daily sotto)
+waveCalculations.js         # media mare, energia onda (kJ), scala Douglas
+forecast.controller.js      # GET /api/forecast/:spotId — condizioni attuali
+forecast.routes.js
+dailyMarineService.js       # GET /api/forecast/:spotId/daily — Copernicus reale
+                            # per giorno via foamy-copernicus, + chart/windChart
+                            # a step di 3h da Open-Meteo
+dailyForecast.controller.js
+forecastCache.js            # cache condivisa (in-memory + Upstash Redis opzionale)
+*.test.js                   # suite Jest + Supertest, accanto al file che testano
 ```
 
-Flusso: `routes -> controllers -> services -> utils`, così ogni layer è testabile
-e sostituibile in isolamento (es. sostituire la simulazione Copernicus con una
-vera integrazione CMEMS toccando solo `marineService.js`).
+Flusso: `routes -> controller -> service -> utils`, con `forecastCache`
+condiviso da entrambi i controller forecast. Le condizioni attuali e il
+forecast a 3 giorni sono deliberatamente disaccoppiati (vedi commenti in
+`dailyMarineService.js`): il primo usa solo Open-Meteo/ECMWF, il secondo usa
+Copernicus reale via `foamy-copernicus`.
 
 ## Endpoint
 
 ### `GET /api/spots`
-Ritorna i 18 spot con coordinate, discipline e banner webcam.
+Ritorna i 19 spot con coordinate, discipline, banner webcam e spot_info.
 
 ### `GET /api/forecast/:spotId`
 Esempio: `GET /api/forecast/san-foca`
@@ -104,12 +117,18 @@ Esempio: `GET /api/forecast/san-foca`
 Esegue in parallelo:
 1. Fetch vento (Open-Meteo, modelli ICON-EU/AROME) → nodi, raffiche, direzione.
 2. Fetch mare (Open-Meteo, modello ECMWF) → altezza, periodo, direzione onda.
-3. Simulazione Copernicus Marine (derivata da ECMWF con variazione random ±15%).
-4. Merge: media altezza/periodo, direzione onda prioritaria da Copernicus.
+3. Tentativo Copernicus Marine (`fetchCopernicusMarine` in `marineService.js`)
+   — oggi è uno stub che fallisce sempre (nessun sottoprocesso Python attivo
+   su questo deploy Node/Render), quindi degrada sempre sul solo ECMWF.
+   L'integrazione Copernicus reale esiste solo per `/daily` sotto, via il
+   microservizio separato foamy-copernicus.
+4. Merge: media altezza/periodo, direzione onda prioritaria da Copernicus
+   (quando disponibile).
 5. Calcolo energia onda: `0.5 * altezza² * periodo * 10` (kJ, arrotondato).
 6. Mappatura Scala Douglas (5 livelli).
 
-Risposta cachata in-memory (TTL configurabile via `.env`, default 15 minuti)
+Risposta cachata (in-memory + Upstash Redis opzionale, TTL configurabile via
+`.env`, default 180 minuti — vedi sezione "Cache" sotto)
 per non sovraccaricare le API esterne.
 
 ### `GET /api/forecast/:spotId/daily`
@@ -147,6 +166,32 @@ Stessa risoluzione anche per il vento in `windChart` (`{time, windSpeedKn,
 windGustsKn, windDirectionDeg}`, 24 punti), dalla stessa chiamata Open-Meteo
 già usata per i massimi giornalieri — nessuna chiamata aggiuntiva.
 
+## Cache
+
+`forecastCache.js` è condiviso da entrambi gli endpoint forecast (chiavi
+`forecast:<spotId>` e `daily:<spotId>`, quindi indipendenti tra loro) e
+lavora su due livelli:
+
+1. **In-memory** (`node-cache`) — istantanea, ma azzerata ad ogni riavvio.
+2. **Upstash Redis** (REST, opzionale) — persistente: sopravvive ai riavvii,
+   fondamentale su Render free perché l'istanza si addormenta dopo 15 minuti
+   di inattività e perde tutto lo stato in-memory. Senza questo livello, ogni
+   "risveglio" del servizio azzera la cache e può far esaurire più in fretta
+   la quota gratuita giornaliera di Open-Meteo (10.000 richieste/giorno,
+   condivisa con altri servizi sullo stesso IP di uscita di Render).
+
+TTL condiviso 180 minuti di default (`FORECAST_CACHE_TTL`, in secondi).
+
+**Setup Upstash** (opzionale ma consigliato in produzione):
+1. Account gratuito su [upstash.com](https://upstash.com) → Redis → Create Database.
+2. Nella scheda "REST API" del database, copia `UPSTASH_REDIS_REST_URL` e
+   `UPSTASH_REDIS_REST_TOKEN`.
+3. Impostale come variabili d'ambiente sul servizio Render (non nel repo).
+
+Se non sono impostate, o se Upstash non risponde entro `UPSTASH_TIMEOUT_MS`
+(default 5s), il backend degrada con grazia sulla sola cache in-memory —
+stesso comportamento di prima, nessuna richiesta utente fallisce per questo.
+
 ## Note per la produzione
 
 - **Copernicus in produzione**: il server deve avere `python3` nel PATH e
@@ -156,15 +201,18 @@ già usata per i massimi giornalieri — nessuna chiamata aggiuntiva.
   fase di deploy (mai committarle nel repo).
 - **Costo per richiesta**: ogni chiamata a `fetchCopernicusMarine` avvia un
   processo Python che apre una connessione remota — più lento di una fetch
-  REST diretta. La cache in-memory (15 min di default) è pensata proprio per
-  ammortizzare questo costo; se il traffico cresce, valutare un job
+  REST diretta. La cache (180 min di default, vedi sotto) è pensata proprio
+  per ammortizzare questo costo; se il traffico cresce, valutare un job
   schedulato che pre-calcola il dato Copernicus per tutti gli spot ogni ora
   invece di farlo on-demand per singola richiesta.
-- **Database**: migrare `src/data/spots.js` a PostgreSQL + PostGIS quando si
+- **Database**: migrare `spots.js` a PostgreSQL + PostGIS quando si
   aggiungeranno altre regioni, per query geospaziali (spot più vicino, ecc.).
-- **Webcam**: gli URL in `webcam_banner` sono placeholder plausibili basati sui
-  network citati nel brief — vanno verificati e aggiornati uno ad uno prima
-  del rilascio, perché la disponibilità dei live stream cambia nel tempo.
-- **Cache**: sostituire `node-cache` con Redis quando si scala su più istanze.
+- **Webcam**: i link in `webcam_banner` sono stati verificati via ricerca web
+  (luglio 2026) per tutti i 19 spot. Dove non esisteva una webcam esatta sullo
+  spot, `webcam_banner.fallback` + `.note` lo segnalano esplicitamente invece
+  di presentare un link non pertinente come se fosse quello giusto; alcuni
+  link (vedi commento in cima a `spots.js`) sono ancora marcati "da
+  verificare" perché la ricerca automatica non è riuscita a confermarli.
+  `webcam_banner` è `null` dove non è stata trovata nessuna fonte utilizzabile.
 - **Rate limiting**: aggiungere `express-rate-limit` sull'endpoint forecast
   prima dell'esposizione pubblica.

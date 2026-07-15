@@ -1,13 +1,13 @@
 const request = require("supertest");
 
 // Mock dei servizi esterni: nessuna chiamata di rete reale nei test.
-jest.mock("../src/services/weatherService");
-jest.mock("../src/services/marineService");
+jest.mock("./weatherService");
+jest.mock("./marineService");
 
-const { fetchWindForecast } = require("../src/services/weatherService");
-const { fetchOpenMeteoMarine, fetchCopernicusMarine } = require("../src/services/marineService");
+const { fetchWindForecast } = require("./weatherService");
+const { fetchOpenMeteoMarine, fetchCopernicusMarine } = require("./marineService");
 
-const { createApp } = require("../app");
+const { createApp } = require("./app");
 
 const app = createApp();
 
@@ -32,11 +32,11 @@ beforeEach(() => {
 });
 
 describe("GET /api/spots", () => {
-  test("risponde 200 con 18 spot", async () => {
+  test("risponde 200 con 19 spot", async () => {
     const res = await request(app).get("/api/spots");
     expect(res.status).toBe(200);
-    expect(res.body.count).toBe(18);
-    expect(res.body.spots).toHaveLength(18);
+    expect(res.body.count).toBe(19);
+    expect(res.body.spots).toHaveLength(19);
   });
 });
 

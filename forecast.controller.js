@@ -5,7 +5,6 @@
  * e restituisce un JSON pulito e scannabile per il frontend.
  */
 
-const NodeCache = require("node-cache");
 const SPOTS = require("./spots");
 const { fetchWindForecast } = require("./weatherService");
 const {
@@ -17,12 +16,7 @@ const {
   calculateWaveEnergyKJ,
   getDouglasSeaState,
 } = require("./waveCalculations");
-
-// Cache in-memory per non martellare le API esterne ad ogni richiesta.
-// In scala futura: sostituire con Redis condiviso tra le istanze.
-const cache = new NodeCache({
-  stdTTL: Number(process.env.FORECAST_CACHE_TTL) || 900, // 15 minuti default
-});
+const forecastCache = require("./forecastCache");
 
 async function getForecastBySpotId(req, res) {
   const { spotId } = req.params;
@@ -36,7 +30,7 @@ async function getForecastBySpotId(req, res) {
   }
 
   const cacheKey = `forecast:${spotId}`;
-  const cached = cache.get(cacheKey);
+  const cached = await forecastCache.get(cacheKey);
   if (cached) {
     return res.json({ ...cached, cache: true });
   }
@@ -119,7 +113,7 @@ async function getForecastBySpotId(req, res) {
       cache: false,
     };
 
-    cache.set(cacheKey, payload);
+    await forecastCache.set(cacheKey, payload);
     return res.json(payload);
   } catch (err) {
     console.error(`[forecast.controller] Errore per spot ${spotId}:`, err);

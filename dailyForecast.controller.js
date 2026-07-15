@@ -2,17 +2,15 @@
  * dailyForecast.controller.js
  * GET /api/forecast/:spotId/daily — forecast a 3 giorni, calcolando
  * energia onda e scala Douglas per ciascun giorno con le stesse formule
- * usate per le condizioni attuali. Cache separata dalle condizioni attuali.
+ * usate per le condizioni attuali. Usa la stessa cache condivisa
+ * (forecastCache.js) delle condizioni attuali, ma con una chiave diversa
+ * ("daily:" invece di "forecast:"), quindi le due restano indipendenti.
  */
 
-const NodeCache = require("node-cache");
 const SPOTS = require("./spots");
 const { fetchThreeDayForecast } = require("./dailyMarineService");
 const { calculateWaveEnergyKJ, getDouglasSeaState } = require("./waveCalculations");
-
-const cache = new NodeCache({
-  stdTTL: Number(process.env.FORECAST_CACHE_TTL) || 900,
-});
+const forecastCache = require("./forecastCache");
 
 async function getDailyForecastBySpotId(req, res) {
   const { spotId } = req.params;
@@ -26,7 +24,7 @@ async function getDailyForecastBySpotId(req, res) {
   }
 
   const cacheKey = `daily:${spotId}`;
-  const cached = cache.get(cacheKey);
+  const cached = await forecastCache.get(cacheKey);
   if (cached) {
     return res.json({ ...cached, cache: true });
   }
@@ -77,7 +75,7 @@ async function getDailyForecastBySpotId(req, res) {
       cache: false,
     };
 
-    cache.set(cacheKey, payload);
+    await forecastCache.set(cacheKey, payload);
     return res.json(payload);
   } catch (err) {
     console.error(`[dailyForecast.controller] Errore per spot ${spotId}:`, err);
