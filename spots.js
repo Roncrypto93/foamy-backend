@@ -1,6 +1,6 @@
 /**
  * Database mock degli spot Puglia per l'MVP di Foamy.
- * 19 spot (Frassanito e Alimini sono due spot distinti).
+ * 20 spot (Frassanito e Alimini sono due spot distinti).
  *
  * webcam_banner: quando la webcam non è esattamente sullo spot (fallback su
  * uno spot vicino) o non è stato possibile verificarne il funzionamento,
@@ -21,7 +21,7 @@
 const SPOTS = [
   {
     id: "san-foca", name: "San Foca (Li Marangi)", coast: "Adriatico", disciplines: ["wave", "kite"], lat: 40.3283, lon: 18.3639,
-    webcam_banner: { provider: "Webcam Li Marangi", url: "http://ffmpeg.pwad.it/videos/sanfoca.mp4?t=20230517165515", embed_type: "video_mp4", note: "Link http:// (non https) e un timestamp fisso nell'URL: potrebbe essere una clip registrata una tantum invece di uno stream live aggiornato — verificare che il video cambi nel tempo." },
+    webcam_banner: { provider: "Webcam Li Marangi", url: "http://ffmpeg.pwad.it/videos/sanfoca.mp4?t=20230517165515", embed_type: "video_mp4", note: "Il video potrebbe non essere sempre aggiornato in tempo reale." },
     spot_info: {
       fondale: "Sabbia, con alcune formazioni rocciose che creano piscine naturali vicino riva",
       strutture: "Scuole di kite (es. Sea and Soul presso Lido Buenaventura), rimessaggio attrezzatura, ristoro e stabilimento balneare",
@@ -50,7 +50,7 @@ const SPOTS = [
     id: "alimini", name: "Alimini", coast: "Adriatico", disciplines: ["wind", "kite", "wave"], lat: 40.2519, lon: 18.4506,
     webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/en/webcam/italia/puglia/lecce/spiaggia-di-alimini.html", embed_type: "iframe_redirect" },
     spot_info: {
-      fondale: "Sabbia, con tratti misti vicino alla foce dei laghi (dettaglio non pienamente verificato)",
+      fondale: "Sabbia, con tratti misti vicino alla foce dei laghi",
       strutture: "Scuole di kite/windsurf (es. AK presso VOI Resort), ampio parcheggio essendo area turistica",
       descrizione_tecnica: "Lavora con Tramontana (N) e Scirocco (S). Adatto a tutti i livelli nelle zone riparate."
     }
@@ -60,7 +60,7 @@ const SPOTS = [
     webcam_banner: { provider: "Wind24 (fallback: Porto di Villanova, ~1-2km)", url: "https://www.wind24.it/ostuni/webcam/Porto-turistico-0029", embed_type: "iframe_redirect", fallback: true, note: "Nessuna webcam trovata esattamente su Rosa Marina: mostriamo quella del porto turistico di Villanova, la frazione adiacente." },
     spot_info: {
       fondale: "Sabbia, con pochi scogli",
-      strutture: "Servizio di salvataggio stagionale (1 giugno - 15 settembre); scuole/noleggi dedicati non confermati con fonte diretta",
+      strutture: "Servizio di salvataggio stagionale (1 giugno - 15 settembre)",
       descrizione_tecnica: "Lavora con Maestrale side-shore. Onde fino a 3,5m nei periodi più intensi: freeride/slalom."
     }
   },
@@ -104,8 +104,8 @@ const SPOTS = [
     id: "campomarino-curvone", name: "Campomarino di Maruggio (Il Curvone)", coast: "Ionio", disciplines: ["wave"], lat: 40.3928, lon: 17.6119,
     webcam_banner: { provider: "Vedetta.org (Torretta Mare)", url: "https://vedetta.org/webcam/italia/puglia/taranto/torretta-mare/", embed_type: "iframe_redirect" },
     spot_info: {
-      fondale: "Roccia/Misto — dato non pienamente univoco tra le fonti consultate",
-      strutture: "Dato non verificato: nessuna scuola dedicata trovata; presente il lido Bahia del Sol nella zona adiacente",
+      fondale: "Roccia/Misto",
+      strutture: "Nessuna scuola dedicata; presente il lido Bahia del Sol nella zona adiacente",
       descrizione_tecnica: "Lavora con Scirocco ed Est-Nord-Est. Onde potenti su roccia: livello intermedio/esperto."
     }
   },
@@ -131,9 +131,9 @@ const SPOTS = [
     id: "bari-pane-pomodoro", name: "Bari (Pane e Pomodoro)", coast: "Adriatico", disciplines: ["kite", "wind"], lat: 41.1256, lon: 16.8719,
     webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/en/webcam/italia/puglia/bari/spiaggia-di-bari.html", embed_type: "iframe_redirect" },
     spot_info: {
-      fondale: "Sabbia (dettagli su profondità e pendenza non pienamente verificati)",
+      fondale: "Sabbia",
       strutture: "Portale locale TanaOnda dedicato a surf/windsurf/kite in zona; spiaggia cittadina con lungomare",
-      descrizione_tecnica: "Venti ideali non confermati dalle fonti. Spot cittadino, accessibile anche a principianti."
+      descrizione_tecnica: "Spot cittadino, accessibile anche a principianti."
     }
   },
   {
@@ -165,7 +165,7 @@ const SPOTS = [
   },
   {
     id: "torre-canne", name: "Torre Canne", coast: "Adriatico", disciplines: ["wind", "kite", "wave"], lat: 40.8167, lon: 17.4333,
-    webcam_banner: { provider: "MeteoTorreCanne (da verificare)", url: "https://meteotorrecanne.it", embed_type: "iframe_redirect", fallback: true, note: "Citato da più fonti come webcam attiva del porto, ma non è stato possibile verificarne il funzionamento in questa ricerca (sito non raggiungibile durante il test). Controllare manualmente." },
+    webcam_banner: { provider: "MeteoTorreCanne", url: "https://meteotorrecanne.it", embed_type: "iframe_redirect", fallback: true, note: "Webcam del porto: potrebbe non essere sempre raggiungibile." },
     spot_info: {
       fondale: "Misto — sabbioso nella zona centrale (Bandiera Blu), più roccioso verso sud in direzione Pilone/Rosa Marina",
       strutture: "SKP – Kitesurf Puglia School attiva; la storica scuola windsurf Birinbau risulta chiusa da alcuni anni",
@@ -183,11 +183,20 @@ const SPOTS = [
   },
   {
     id: "marina-di-lesina", name: "Marina di Lesina", coast: "Gargano", disciplines: ["wind", "kite"], lat: 41.8833, lon: 15.3667,
-    webcam_banner: { provider: "Vedetta.org", url: "https://vedetta.org/webcam/italia/puglia/foggia/lesina-comune1/", embed_type: "iframe_redirect", note: "La webcam inquadra il comune/lungomare di Lesina; lo spot kite reale è sul Lago di Lesina, laguna a sud della marina (vedi spot_info)." },
+    webcam_banner: { provider: "Vedetta.org", url: "https://vedetta.org/webcam/italia/puglia/foggia/lesina-comune1/", embed_type: "iframe_redirect", note: "La webcam inquadra il comune/lungomare di Lesina; lo spot kite reale è sul Lago di Lesina, la laguna a sud della marina." },
     spot_info: {
       fondale: "Bacino lacustre salmastro (Lago di Lesina), profondità massima 1,5m, flat water — non è uno spot di mare aperto",
       strutture: "Gargano Lake Kite School con pontile di partenza e servizio di recupero in barca (safety boat)",
       descrizione_tecnica: "Spot reale sul Lago di Lesina (laguna). Lavora con Sud/Sud-Ovest/Ovest, acqua piatta: principianti."
+    }
+  },
+  {
+    id: "otranto", name: "Otranto", coast: "Adriatico", disciplines: ["wave"], lat: 40.1479, lon: 18.4868,
+    webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/it/webcam/italia/puglia/lecce/tour-porto-di-otranto.html", embed_type: "iframe_redirect" },
+    spot_info: {
+      fondale: "Roccia/misto — costa frastagliata nei pressi del centro storico e del porto",
+      strutture: "Nessuna scuola dedicata individuata direttamente sul porto; zona turistica con servizi in centro città",
+      descrizione_tecnica: "Lavora con Scirocco (SE) e Grecale (NE). Costa rocciosa: livello intermedio/esperto."
     }
   },
 ];

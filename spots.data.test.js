@@ -1,8 +1,8 @@
 const SPOTS = require("./spots");
 
 describe("Database spot Puglia", () => {
-  test("contiene esattamente 19 spot come da specifica", () => {
-    expect(SPOTS).toHaveLength(19);
+  test("contiene esattamente 20 spot come da specifica", () => {
+    expect(SPOTS).toHaveLength(20);
   });
 
   test("ogni spot ha id univoco", () => {

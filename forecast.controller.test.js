@@ -32,11 +32,11 @@ beforeEach(() => {
 });
 
 describe("GET /api/spots", () => {
-  test("risponde 200 con 19 spot", async () => {
+  test("risponde 200 con 20 spot", async () => {
     const res = await request(app).get("/api/spots");
     expect(res.status).toBe(200);
-    expect(res.body.count).toBe(19);
-    expect(res.body.spots).toHaveLength(19);
+    expect(res.body.count).toBe(20);
+    expect(res.body.spots).toHaveLength(20);
   });
 });
 

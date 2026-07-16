@@ -58,7 +58,7 @@ Upstash) sono mockate — i test girano offline e in modo deterministico:
 - `waveCalculations.test.js` — unit test puri sulla logica di media, formula
   energia onda, mappatura Scala Douglas (inclusi i valori esattamente sui
   confini tra le fasce).
-- `spots.data.test.js` — integrità del database dei 19 spot (id univoci,
+- `spots.data.test.js` — integrità del database dei 20 spot (id univoci,
   coordinate dentro i confini pugliesi, discipline valide, webcam_banner
   valido o esplicitamente `null`, spot_info completo).
 - `forecast.controller.test.js` — endpoint condizioni attuali end-to-end via
@@ -86,7 +86,7 @@ app.js                      # factory Express (separata per essere testabile)
 fetch_copernicus_wave.py   # script Python: Copernicus Marine Toolbox ufficiale
                             # (non ancora invocato da marineService.js, vedi sotto)
 requirements.txt
-spots.js                    # "database" mock dei 19 spot Puglia + spot_info
+spots.js                    # "database" mock dei 20 spot Puglia + spot_info
 spots.routes.js             # GET /api/spots
 weatherService.js           # fetch vento da Open-Meteo (ICON-EU/AROME) — condizioni attuali
 marineService.js            # fetch mare Open-Meteo ECMWF — condizioni attuali;
@@ -114,7 +114,7 @@ Copernicus reale via `foamy-copernicus` per i primi giorni.
 ## Endpoint
 
 ### `GET /api/spots`
-Ritorna i 19 spot con coordinate, discipline, banner webcam e spot_info.
+Ritorna i 20 spot con coordinate, discipline, banner webcam e spot_info.
 
 ### `GET /api/forecast/:spotId`
 Esempio: `GET /api/forecast/san-foca`
@@ -218,7 +218,7 @@ stesso comportamento di prima, nessuna richiesta utente fallisce per questo.
 - **Database**: migrare `spots.js` a PostgreSQL + PostGIS quando si
   aggiungeranno altre regioni, per query geospaziali (spot più vicino, ecc.).
 - **Webcam**: i link in `webcam_banner` sono stati verificati via ricerca web
-  (luglio 2026) per tutti i 19 spot. Dove non esisteva una webcam esatta sullo
+  (luglio 2026) per tutti i 20 spot. Dove non esisteva una webcam esatta sullo
   spot, `webcam_banner.fallback` + `.note` lo segnalano esplicitamente invece
   di presentare un link non pertinente come se fosse quello giusto; alcuni
   link (vedi commento in cima a `spots.js`) sono ancora marcati "da
