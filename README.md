@@ -133,7 +133,7 @@ Esegue in parallelo:
 6. Mappatura Scala Douglas (5 livelli).
 7. Correzione manuale fissa su `wind.speedKn` (non su `wind.gustsKn`, che
    resta il dato Open-Meteo grezzo): `+ WIND_SPEED_CORRECTION_KN` (default
-   2 nodi), tarata da un confronto sul campo con un anemometro che ha
+   0.5 nodi), tarata da un confronto sul campo con un anemometro che ha
    mostrato il dato Open-Meteo sistematicamente più basso della realtà.
    Solo qui, non su `/daily` (nessun modo altrettanto diretto di validare
    un dato previsionale futuro).

@@ -25,7 +25,7 @@ const forecastCache = require("./forecastCache");
 // strumento fisico — non c'è modo di validare allo stesso modo un dato
 // previsionale su giorni futuri. Solo sulla velocità media, non sulle
 // raffiche (che restano il dato Open-Meteo grezzo).
-const WIND_SPEED_CORRECTION_KN = Number(process.env.WIND_SPEED_CORRECTION_KN) || 2;
+const WIND_SPEED_CORRECTION_KN = Number(process.env.WIND_SPEED_CORRECTION_KN) || 0.5;
 
 async function getForecastBySpotId(req, res) {
   const { spotId } = req.params;
