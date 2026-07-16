@@ -8,9 +8,12 @@
  * possibile confermare visivamente ogni singolo link (ricerca web luglio
  * 2026), quindi vanno ricontrollati manualmente prima di considerarli
  * definitivi. `webcam_banner: null` dove non è stata trovata nessuna
- * webcam utilizzabile. `embed_type: "video_mp4"` (san-foca) indica un file
- * video diretto da riprodurre con un tag <video>, non una pagina da aprire
- * in un link — vedi `embed_type: "iframe_redirect"` per tutti gli altri.
+ * webcam utilizzabile. `embed_type: "video_mp4"` indicherebbe un file
+ * video diretto da riprodurre con un tag <video> invece di un link — non
+ * usato per nessuno spot al momento: san-foca lo usava, ma il file è
+ * servito solo in http:// (non https), quindi il browser lo blocca se
+ * incorporato in una pagina https (mixed content) — ora è un link normale
+ * come tutti gli altri, si apre in una scheda a parte senza il blocco.
  *
  * spot_info: fondale, strutture e descrizione tecnica da guide surf/kite
  * italiane (kitesurfing.it, localsalentokitesurf.com, kitesurfculture.com,
@@ -21,7 +24,7 @@
 const SPOTS = [
   {
     id: "san-foca", name: "San Foca (Li Marangi)", coast: "Adriatico", disciplines: ["wave", "kite"], lat: 40.3283, lon: 18.3639,
-    webcam_banner: { provider: "Webcam Li Marangi", url: "http://ffmpeg.pwad.it/videos/sanfoca.mp4?t=20230517165515", embed_type: "video_mp4", note: "Il video potrebbe non essere sempre aggiornato in tempo reale." },
+    webcam_banner: { provider: "Webcam Li Marangi", url: "http://ffmpeg.pwad.it/videos/sanfoca.mp4?t=20230517165515", note: "Il link apre il file video direttamente in una nuova scheda (il sito non supporta connessioni sicure, quindi non può essere mostrato dentro la pagina)." },
     spot_info: {
       fondale: "Sabbia, con alcune formazioni rocciose che creano piscine naturali vicino riva",
       strutture: "Scuole di kite (es. Sea and Soul presso Lido Buenaventura), rimessaggio attrezzatura, ristoro e stabilimento balneare",
