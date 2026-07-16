@@ -110,7 +110,7 @@ const SPOTS = [
     }
   },
   {
-    id: "torre-lapillo-punta-prosciutto", name: "Torre Lapillo / Punta Prosciutto", coast: "Ionio", disciplines: ["kite", "wind"], lat: 40.3167, lon: 17.8667,
+    id: "torre-lapillo-punta-prosciutto", name: "Torre Lapillo (Gatto Nero)", coast: "Ionio", disciplines: ["kite", "wind"], lat: 40.3167, lon: 17.8667,
     webcam_banner: { provider: "SkylineWebcams (fallback: Porto Cesareo, ~3-5km)", url: "https://www.skylinewebcams.com/en/webcam/italia/puglia/lecce/porto-cesareo.html", embed_type: "iframe_redirect", fallback: true, note: "Nessuna webcam dedicata trovata esattamente su Torre Lapillo/Punta Prosciutto." },
     spot_info: {
       fondale: "Sabbia, fondale basso e digradante per 50-70 metri dalla riva",
