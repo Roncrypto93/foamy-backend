@@ -23,8 +23,9 @@ const forecastCache = require("./forecastCache");
 // della realtà. Applicata solo qui (condizioni attuali), non al forecast
 // settimanale, perché è l'unico dato verificabile in tempo reale con uno
 // strumento fisico — non c'è modo di validare allo stesso modo un dato
-// previsionale su giorni futuri.
-const WIND_SPEED_CORRECTION_KN = Number(process.env.WIND_SPEED_CORRECTION_KN) || 1.5;
+// previsionale su giorni futuri. Solo sulla velocità media, non sulle
+// raffiche (che restano il dato Open-Meteo grezzo).
+const WIND_SPEED_CORRECTION_KN = Number(process.env.WIND_SPEED_CORRECTION_KN) || 2;
 
 async function getForecastBySpotId(req, res) {
   const { spotId } = req.params;
@@ -101,7 +102,7 @@ async function getForecastBySpotId(req, res) {
       },
       wind: {
         speedKn: applyWindCorrection(wind.windSpeedKn),
-        gustsKn: applyWindCorrection(wind.windGustsKn),
+        gustsKn: wind.windGustsKn,
         directionDeg: wind.windDirectionDeg,
       },
       sea: {

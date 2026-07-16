@@ -56,11 +56,12 @@ describe("GET /api/forecast/:spotId", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.spot.id).toBe("san-foca");
-    // +1.5 nodi di correzione manuale (WIND_SPEED_CORRECTION_KN, default),
-    // taratura da confronto con anemometro sul campo.
+    // +2 nodi di correzione manuale sulla sola velocità (WIND_SPEED_CORRECTION_KN,
+    // default), taratura da confronto con anemometro sul campo. Le raffiche
+    // restano il dato Open-Meteo grezzo.
     expect(res.body.wind).toEqual({
-      speedKn: 14,
-      gustsKn: 19.7,
+      speedKn: 14.5,
+      gustsKn: 18.2,
       directionDeg: 315,
     });
     // media altezza: (1.0 + 1.4) / 2 = 1.2 ; media periodo: (6 + 7) / 2 = 6.5
