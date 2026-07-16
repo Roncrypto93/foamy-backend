@@ -56,9 +56,11 @@ describe("GET /api/forecast/:spotId", () => {
 
     expect(res.status).toBe(200);
     expect(res.body.spot.id).toBe("san-foca");
+    // +1.5 nodi di correzione manuale (WIND_SPEED_CORRECTION_KN, default),
+    // taratura da confronto con anemometro sul campo.
     expect(res.body.wind).toEqual({
-      speedKn: 12.5,
-      gustsKn: 18.2,
+      speedKn: 14,
+      gustsKn: 19.7,
       directionDeg: 315,
     });
     // media altezza: (1.0 + 1.4) / 2 = 1.2 ; media periodo: (6 + 7) / 2 = 6.5
@@ -117,5 +119,16 @@ describe("GET /api/forecast/:spotId", () => {
     expect(fetchWindForecast).toHaveBeenCalledTimes(1);
     expect(fetchOpenMeteoMarine).toHaveBeenCalledTimes(1);
     expect(fetchCopernicusMarine).toHaveBeenCalledTimes(1);
+  });
+
+  test("dato vento nullo: la correzione non lo trasforma in un numero (resta null)", async () => {
+    fetchWindForecast.mockResolvedValue({ windSpeedKn: null, windGustsKn: null, windDirectionDeg: 200 });
+    fetchOpenMeteoMarine.mockResolvedValue(ECMWF_MOCK);
+    fetchCopernicusMarine.mockResolvedValue(COPERNICUS_MOCK);
+
+    const res = await request(app).get("/api/forecast/campomarino-curvone");
+
+    expect(res.body.wind.speedKn).toBeNull();
+    expect(res.body.wind.gustsKn).toBeNull();
   });
 });

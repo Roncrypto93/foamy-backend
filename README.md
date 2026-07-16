@@ -131,6 +131,11 @@ Esegue in parallelo:
    (quando disponibile).
 5. Calcolo energia onda: `0.5 * altezza² * periodo * 10` (kJ, arrotondato).
 6. Mappatura Scala Douglas (5 livelli).
+7. Correzione manuale fissa su `wind.speedKn`/`wind.gustsKn`:
+   `+ WIND_SPEED_CORRECTION_KN` (default 1.5 nodi), tarata da un confronto
+   sul campo con un anemometro che ha mostrato il dato Open-Meteo
+   sistematicamente più basso della realtà. Solo qui, non su `/daily`
+   (nessun modo altrettanto diretto di validare un dato previsionale futuro).
 
 Risposta cachata (in-memory + Upstash Redis opzionale, TTL configurabile via
 `.env`, default 180 minuti — vedi sezione "Cache" sotto)

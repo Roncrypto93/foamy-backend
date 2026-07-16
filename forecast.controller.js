@@ -18,6 +18,14 @@ const {
 } = require("./waveCalculations");
 const forecastCache = require("./forecastCache");
 
+// Correzione manuale fissa: confronto sul campo con un anemometro ha
+// mostrato che il vento live (Open-Meteo) è sistematicamente più basso
+// della realtà. Applicata solo qui (condizioni attuali), non al forecast
+// settimanale, perché è l'unico dato verificabile in tempo reale con uno
+// strumento fisico — non c'è modo di validare allo stesso modo un dato
+// previsionale su giorni futuri.
+const WIND_SPEED_CORRECTION_KN = Number(process.env.WIND_SPEED_CORRECTION_KN) || 1.5;
+
 async function getForecastBySpotId(req, res) {
   const { spotId } = req.params;
 
@@ -92,8 +100,8 @@ async function getForecastBySpotId(req, res) {
         lon: spot.lon,
       },
       wind: {
-        speedKn: wind.windSpeedKn,
-        gustsKn: wind.windGustsKn,
+        speedKn: applyWindCorrection(wind.windSpeedKn),
+        gustsKn: applyWindCorrection(wind.windGustsKn),
         directionDeg: wind.windDirectionDeg,
       },
       sea: {
@@ -123,6 +131,11 @@ async function getForecastBySpotId(req, res) {
       detail: err.message,
     });
   }
+}
+
+function applyWindCorrection(value) {
+  if (value === undefined || value === null || Number.isNaN(value)) return null;
+  return Math.round((value + WIND_SPEED_CORRECTION_KN) * 10) / 10;
 }
 
 module.exports = { getForecastBySpotId };
