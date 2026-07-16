@@ -75,6 +75,22 @@ describe("forecastCache", () => {
     expect(body[4]).toBe("10800");
   });
 
+  test("con Upstash configurato: set con ttlSeconds custom usa quel valore invece del default", async () => {
+    process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ result: "OK" }),
+    });
+
+    const forecastCache = require("./forecastCache");
+    await forecastCache.set("test:custom-ttl", { a: 1 }, 43200);
+
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body[3]).toBe("EX");
+    expect(body[4]).toBe("43200");
+  });
+
   test("con Upstash configurato: se la REST API fallisce, get degrada con grazia sulla cache locale", async () => {
     process.env.UPSTASH_REDIS_REST_URL = "https://example.upstash.io";
     process.env.UPSTASH_REDIS_REST_TOKEN = "test-token";

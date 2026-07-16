@@ -176,11 +176,47 @@ Stessa risoluzione anche per il vento in `windChart` (`{time, windSpeedKn,
 windGustsKn, windDirectionDeg}`, 56 punti), dalla stessa chiamata Open-Meteo
 già usata per i massimi giornalieri — nessuna chiamata aggiuntiva.
 
+### `GET /api/forecast/:spotId/tide`
+Esempio: `GET /api/forecast/san-foca/tide`
+
+Marea e temperatura dell'acqua, endpoint separato dagli altri due perché ha
+finestre di refresh diverse (vedi "Cache" sotto). Risposta in **snake_case**
+(a differenza del resto dell'API):
+
+```json
+{
+  "spot_id": "san-foca",
+  "water_temp": 24.3,
+  "tide": {
+    "current_level": 0.12,
+    "trend": "rising",
+    "hourly_forecast": [
+      { "time": "08:00", "level": 0.05 },
+      { "time": "09:00", "level": 0.12 }
+    ]
+  }
+}
+```
+
+- **`water_temp`**: Open-Meteo Marine, `sea_surface_temperature`.
+- **`tide`**: livello del mare orario da Copernicus Marine, dataset fisico
+  `cmems_mod_med_phy-ssh_anfc_4.2km-2D_PT1H-m` (variabile `zos`), interrogato
+  su [foamy-copernicus](https://github.com/Roncrypto93/foamy-copernicus)
+  (`GET /tide?lat=&lon=&date=YYYY-MM-DD`) — stessa risoluzione/famiglia del
+  dataset onde, stesso account. A differenza del dataset onde, questo ha
+  anche una variante "detided" separata: il prodotto standard usato qui
+  include quindi il segnale di marea vero, non solo dinamica generica.
+  `current_level`/`trend` sono calcolati confrontando l'ora corrente
+  (Europe/Rome) con l'ora precedente nell'array orario.
+- Se una delle due fonti fallisce, l'altra resta comunque disponibile
+  (degrado indipendente: `water_temp: null` o `tide.hourly_forecast: []`,
+  mai un errore sull'intero endpoint per un problema su una sola fonte).
+
 ## Cache
 
-`forecastCache.js` è condiviso da entrambi gli endpoint forecast (chiavi
-`forecast:<spotId>` e `daily:<spotId>`, quindi indipendenti tra loro) e
-lavora su due livelli:
+`forecastCache.js` è condiviso da tutti e tre gli endpoint forecast (chiavi
+`forecast:<spotId>`, `daily:<spotId>`, `watertemp:<spotId>` e
+`tide:<spotId>:<data>`, tutte indipendenti tra loro) e lavora su due livelli:
 
 1. **In-memory** (`node-cache`) — istantanea, ma azzerata ad ogni riavvio.
 2. **Upstash Redis** (REST, opzionale) — persistente: sopravvive ai riavvii,
@@ -190,7 +226,13 @@ lavora su due livelli:
    la quota gratuita giornaliera di Open-Meteo (10.000 richieste/giorno,
    condivisa con altri servizi sullo stesso IP di uscita di Render).
 
-TTL condiviso 180 minuti di default (`FORECAST_CACHE_TTL`, in secondi).
+TTL condiviso 180 minuti di default per `forecast`/`daily`
+(`FORECAST_CACHE_TTL`, in secondi). `/tide` usa finestre proprie, più lunghe:
+temperatura acqua 12 ore (`WATER_TEMP_CACHE_TTL`), marea ~26 ore
+(`TIDE_CACHE_TTL`) — la chiave include già la data del giorno, quindi il
+refresh effettivo avviene una volta al giorno per spot senza bisogno di un
+vero cron (che su Render free, con lo sleep dopo 15 minuti di inattività,
+non sarebbe comunque affidabile).
 
 **Setup Upstash** (opzionale ma consigliato in produzione):
 1. Account gratuito su [upstash.com](https://upstash.com) → Redis → Create Database.

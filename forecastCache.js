@@ -75,12 +75,17 @@ async function get(key) {
   }
 }
 
-/** Scrive su entrambi i livelli. Un fallimento su Upstash non blocca la risposta. */
-async function set(key, value) {
-  localCache.set(key, value);
+/**
+ * Scrive su entrambi i livelli. Un fallimento su Upstash non blocca la
+ * risposta. `ttlSeconds` è opzionale: alcuni dati (es. temperatura acqua,
+ * marea) vogliono una finestra diversa dai 180 minuti standard del forecast.
+ */
+async function set(key, value, ttlSeconds) {
+  const ttl = ttlSeconds || TTL_SECONDS;
+  localCache.set(key, value, ttl);
   if (!upstashEnabled) return;
   try {
-    await upstashCommand(["SET", key, JSON.stringify(value), "EX", String(TTL_SECONDS)]);
+    await upstashCommand(["SET", key, JSON.stringify(value), "EX", String(ttl)]);
   } catch (err) {
     console.warn(`[forecastCache] Upstash SET fallita per "${key}":`, err.message);
   }

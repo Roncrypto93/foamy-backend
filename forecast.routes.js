@@ -1,6 +1,7 @@
 const express = require("express");
 const { getForecastBySpotId } = require("./forecast.controller");
 const { getDailyForecastBySpotId } = require("./dailyForecast.controller");
+const { getTideBySpotId } = require("./tideForecast.controller");
 
 const router = express.Router();
 
@@ -17,5 +18,13 @@ router.get("/:spotId", getForecastBySpotId);
  * (fallback ECMWF se Copernicus non risponde per un dato giorno).
  */
 router.get("/:spotId/daily", getDailyForecastBySpotId);
+
+/**
+ * GET /api/forecast/:spotId/tide
+ * Marea (Copernicus Marine SSH, aggiornata al massimo una volta al giorno
+ * per spot) e temperatura dell'acqua (Open-Meteo Marine, al massimo ogni
+ * 12 ore).
+ */
+router.get("/:spotId/tide", getTideBySpotId);
 
 module.exports = router;
