@@ -118,6 +118,37 @@ describe("tideService.fetchTideAndWaterTemp", () => {
     warnSpy.mockRestore();
   });
 
+  test("foamy-copernicus risponde 200 ma senza dati orari validi: trattato come fallimento, non cachato come vuoto", async () => {
+    global.fetch = jest.fn((url) => {
+      const u = String(url);
+      if (u.includes("marine-api.open-meteo.com")) return Promise.resolve({ ok: true, json: async () => mockWaterTempResponse() });
+      if (u.startsWith(COPERNICUS_TEST_URL)) return Promise.resolve({ ok: true, json: async () => ({ hourly: [] }) });
+      throw new Error("URL non mockato: " + u);
+    });
+    const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
+
+    const result = await fetchTideAndWaterTemp("torre-canne", 40.8, 17.4);
+
+    expect(result.hourly).toEqual([]);
+    expect(result.currentLevel).toBeNull();
+    warnSpy.mockRestore();
+  });
+
+  test("un array orario vuoto già in cache (da un bug/fallimento precedente) viene ignorato e ri-scaricato, non tenuto fino a scadenza", async () => {
+    const forecastCache = require("./forecastCache");
+    const dateStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Rome" }).format(new Date());
+    await forecastCache.set(`tide:torre-canne:${dateStr}`, []);
+
+    const goodHourly = buildHourly(Array.from({ length: 24 }, () => 0.3));
+    global.fetch = mockFetchImpl(goodHourly);
+
+    const result = await fetchTideAndWaterTemp("torre-canne", 40.8, 17.4);
+
+    expect(result.hourly).toHaveLength(24);
+    const tideCalls = global.fetch.mock.calls.filter(([url]) => String(url).startsWith(COPERNICUS_TEST_URL));
+    expect(tideCalls.length).toBeGreaterThan(0);
+  });
+
   test("se Copernicus fallisce, la temperatura dell'acqua resta comunque disponibile (degrado indipendente)", async () => {
     global.fetch = jest.fn((url) => {
       const u = String(url);

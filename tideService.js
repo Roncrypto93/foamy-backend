@@ -85,15 +85,28 @@ async function fetchTideHourly(lat, lon, dateStr) {
       throw new Error(`[tideService] Errore foamy-copernicus (${res.status}) per ${dateStr}`);
     }
     const data = await res.json();
-    return Array.isArray(data.hourly) ? data.hourly : [];
+    // Una risposta 200 con hourly mancante/vuoto non è un risultato valido
+    // (es. istanza foamy-copernicus in fase di riavvio): va trattata come
+    // fallimento, altrimenti getOrFetch la cachera per ~26 ore invece di
+    // riprovare al prossimo giro.
+    if (!Array.isArray(data.hourly) || data.hourly.length === 0) {
+      throw new Error(`[tideService] Risposta foamy-copernicus senza dati orari validi per ${dateStr}`);
+    }
+    return data.hourly;
   } finally {
     clearTimeout(timer);
   }
 }
 
-async function getOrFetch(key, fetchFn, ttl) {
+/**
+ * `isValid` permette di trattare un valore già in cache come se fosse un
+ * "miss" quando non è utilizzabile (es. un array orario vuoto salvato per
+ * errore in passato) — senza, un dato invalido resterebbe in cache fino
+ * alla scadenza del TTL invece di essere ritentato al prossimo accesso.
+ */
+async function getOrFetch(key, fetchFn, ttl, isValid = () => true) {
   const cached = await forecastCache.get(key);
-  if (cached !== undefined) return cached;
+  if (cached !== undefined && isValid(cached)) return cached;
   const fresh = await fetchFn();
   await forecastCache.set(key, fresh, ttl);
   return fresh;
@@ -129,7 +142,7 @@ async function fetchTideAndWaterTemp(spotId, lat, lon) {
 
   const [waterTempResult, tideResult] = await Promise.allSettled([
     getOrFetch(waterTempKey, () => fetchWaterTemp(lat, lon), WATER_TEMP_CACHE_TTL),
-    getOrFetch(tideKey, () => fetchTideHourly(lat, lon, dateStr), TIDE_CACHE_TTL),
+    getOrFetch(tideKey, () => fetchTideHourly(lat, lon, dateStr), TIDE_CACHE_TTL, (v) => Array.isArray(v) && v.length > 0),
   ]);
 
   let waterTemp = null;
