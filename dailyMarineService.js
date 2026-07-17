@@ -62,13 +62,12 @@ function buildWindChartSeries(wind) {
   if (!hourly?.time) return [];
   const points = [];
   for (let i = 0; i < hourly.time.length; i += 3) {
+    const speed = hourly[`wind_speed_10m_${WIND_MODEL}`]?.[i];
+    const rawGusts = hourly[`wind_gusts_10m_${GUST_MODEL}`]?.[i] ?? hourly[`wind_gusts_10m_${WIND_MODEL}`]?.[i];
     points.push({
       time: hourly.time[i],
-      windSpeedKn: roundTo(hourly[`wind_speed_10m_${WIND_MODEL}`]?.[i], 1),
-      windGustsKn: roundTo(
-        hourly[`wind_gusts_10m_${GUST_MODEL}`]?.[i] ?? hourly[`wind_gusts_10m_${WIND_MODEL}`]?.[i],
-        1
-      ),
+      windSpeedKn: roundTo(speed, 1),
+      windGustsKn: roundTo(gustFloor(rawGusts, speed), 1),
       windDirectionDeg: roundTo(hourly[`wind_direction_10m_${WIND_MODEL}`]?.[i], 0),
     });
   }
@@ -195,12 +194,15 @@ async function fetchWeeklyForecast(lat, lon) {
       console.warn(`[dailyMarineService] Copernicus fallito per ${date} (${lat},${lon}):`, copernicus.reason?.message);
     }
 
+    const windSpeedKn = wind.daily[`wind_speed_10m_max_${WIND_MODEL}`][i];
+    const rawGustsKn =
+      wind.daily[`wind_gusts_10m_max_${GUST_MODEL}`]?.[i] ??
+      wind.daily[`wind_gusts_10m_max_${WIND_MODEL}`]?.[i];
+
     return {
       date,
-      windSpeedKn: wind.daily[`wind_speed_10m_max_${WIND_MODEL}`][i],
-      windGustsKn:
-        wind.daily[`wind_gusts_10m_max_${GUST_MODEL}`]?.[i] ??
-        wind.daily[`wind_gusts_10m_max_${WIND_MODEL}`]?.[i],
+      windSpeedKn,
+      windGustsKn: gustFloor(rawGustsKn, windSpeedKn),
       windDirectionDeg: wind.daily[`wind_direction_10m_dominant_${WIND_MODEL}`][i],
       sea,
       copernicusDegraded,
@@ -214,6 +216,17 @@ function roundTo(value, decimals) {
   if (value === undefined || value === null || Number.isNaN(value)) return null;
   const factor = 10 ** decimals;
   return Math.round(value * factor) / factor;
+}
+
+// Una raffica non può mai essere fisicamente più bassa della velocità
+// media: incrociare due modelli diversi (velocità da ICON/best_match,
+// raffiche da GFS) può romperlo, visto che ogni modello è coerente solo al
+// proprio interno, non tra loro. Pavimento: se il modello delle raffiche
+// stima meno della velocità mostrata, si tiene la velocità come minimo.
+function gustFloor(gusts, speed) {
+  if (gusts === undefined || gusts === null) return speed;
+  if (speed === undefined || speed === null) return gusts;
+  return Math.max(gusts, speed);
 }
 
 module.exports = { fetchWeeklyForecast };

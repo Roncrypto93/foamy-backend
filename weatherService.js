@@ -78,6 +78,7 @@ async function fetchWindForecast(lat, lon) {
   const lastIdx = (hourly[`wind_speed_10m_${modelUsed}`]?.length || 1) - 1;
   const safeIdx = Math.min(idx, Math.max(lastIdx, 0));
 
+  const speed = hourly[`wind_speed_10m_${modelUsed}`]?.[safeIdx];
   // Raffiche da GFS quando disponibili; se GFS non copre il punto/l'ora
   // (es. fuori griglia), si ricade sulle raffiche del modello principale.
   const gusts =
@@ -85,8 +86,8 @@ async function fetchWindForecast(lat, lon) {
     hourly[`wind_gusts_10m_${modelUsed}`]?.[safeIdx];
 
   return {
-    windSpeedKn: roundTo(hourly[`wind_speed_10m_${modelUsed}`]?.[safeIdx], 1),
-    windGustsKn: roundTo(gusts, 1),
+    windSpeedKn: roundTo(speed, 1),
+    windGustsKn: roundTo(gustFloor(gusts, speed), 1),
     windDirectionDeg: roundTo(hourly[`wind_direction_10m_${modelUsed}`]?.[safeIdx], 0),
     timestamp: hourly.time?.[safeIdx] ?? new Date().toISOString(),
     modelUsed,
@@ -97,6 +98,18 @@ function roundTo(value, decimals) {
   if (value === undefined || value === null || Number.isNaN(value)) return null;
   const factor = 10 ** decimals;
   return Math.round(value * factor) / factor;
+}
+
+// Una raffica non può mai essere fisicamente più bassa della velocità
+// media: incrociare due modelli diversi (velocità da ICON, raffiche da
+// GFS) può romperlo, visto che ogni modello è coerente solo al proprio
+// interno, non tra loro. Qui si applica un pavimento: se il modello delle
+// raffiche stima un valore inferiore alla velocità mostrata, si tiene la
+// velocità stessa come raffica minima invece del dato incoerente.
+function gustFloor(gusts, speed) {
+  if (gusts === undefined || gusts === null) return speed;
+  if (speed === undefined || speed === null) return gusts;
+  return Math.max(gusts, speed);
 }
 
 module.exports = { fetchWindForecast, getCurrentHourIndex };
