@@ -30,6 +30,13 @@ const TIMEZONE = "Europe/Rome";
 const FORECAST_DAYS = 7;
 const COPERNICUS_REAL_DAYS = Number(process.env.COPERNICUS_REAL_DAYS) || 3;
 
+// Stessa taratura raffiche di weatherService.js: raffiche da GFS (il
+// modello di Windguru, sistematicamente più basso di ICON su questo dato),
+// velocità/direzione dal modello principale. Con due modelli nella stessa
+// chiamata Open-Meteo suffissa tutti i campi con il nome del modello.
+const WIND_MODEL = "best_match";
+const GUST_MODEL = process.env.WIND_GUST_MODEL || "gfs_seamless";
+
 async function fetchWindDaily(lat, lon) {
   const params = new URLSearchParams({
     latitude: lat,
@@ -39,6 +46,7 @@ async function fetchWindDaily(lat, lon) {
     wind_speed_unit: "kn",
     timezone: TIMEZONE,
     forecast_days: FORECAST_DAYS,
+    models: `${WIND_MODEL},${GUST_MODEL}`,
   });
   const res = await fetch(`${OPEN_METEO_FORECAST_URL}?${params.toString()}`);
   if (!res.ok) {
@@ -56,9 +64,12 @@ function buildWindChartSeries(wind) {
   for (let i = 0; i < hourly.time.length; i += 3) {
     points.push({
       time: hourly.time[i],
-      windSpeedKn: roundTo(hourly.wind_speed_10m?.[i], 1),
-      windGustsKn: roundTo(hourly.wind_gusts_10m?.[i], 1),
-      windDirectionDeg: roundTo(hourly.wind_direction_10m?.[i], 0),
+      windSpeedKn: roundTo(hourly[`wind_speed_10m_${WIND_MODEL}`]?.[i], 1),
+      windGustsKn: roundTo(
+        hourly[`wind_gusts_10m_${GUST_MODEL}`]?.[i] ?? hourly[`wind_gusts_10m_${WIND_MODEL}`]?.[i],
+        1
+      ),
+      windDirectionDeg: roundTo(hourly[`wind_direction_10m_${WIND_MODEL}`]?.[i], 0),
     });
   }
   return points;
@@ -186,9 +197,11 @@ async function fetchWeeklyForecast(lat, lon) {
 
     return {
       date,
-      windSpeedKn: wind.daily.wind_speed_10m_max[i],
-      windGustsKn: wind.daily.wind_gusts_10m_max[i],
-      windDirectionDeg: wind.daily.wind_direction_10m_dominant[i],
+      windSpeedKn: wind.daily[`wind_speed_10m_max_${WIND_MODEL}`][i],
+      windGustsKn:
+        wind.daily[`wind_gusts_10m_max_${GUST_MODEL}`]?.[i] ??
+        wind.daily[`wind_gusts_10m_max_${WIND_MODEL}`]?.[i],
+      windDirectionDeg: wind.daily[`wind_direction_10m_dominant_${WIND_MODEL}`][i],
       sea,
       copernicusDegraded,
     };

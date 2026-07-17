@@ -120,7 +120,11 @@ Ritorna i 20 spot con coordinate, discipline, banner webcam e spot_info.
 Esempio: `GET /api/forecast/san-foca`
 
 Esegue in parallelo:
-1. Fetch vento (Open-Meteo, modelli ICON-EU/AROME) → nodi, raffiche, direzione.
+1. Fetch vento (Open-Meteo) → nodi, raffiche, direzione. Velocità e
+   direzione dal modello ICON-EU (fallback best_match); le **raffiche** dal
+   modello `WIND_GUST_MODEL` (default GFS, la stessa fonte di Windguru —
+   le raffiche ICON risultavano sistematicamente più alte, vedi
+   `.env.example`), nella stessa chiamata multi-modello.
 2. Fetch mare (Open-Meteo, modello ECMWF) → altezza, periodo, direzione onda.
 3. Tentativo Copernicus Marine (`fetchCopernicusMarine` in `marineService.js`)
    — oggi è uno stub che fallisce sempre (nessun sottoprocesso Python attivo
@@ -146,7 +150,9 @@ per non sovraccaricare le API esterne.
 Esempio: `GET /api/forecast/san-foca/daily`
 
 Forecast sui prossimi **7 giorni** (`days`). Il vento viene sempre da
-Open-Meteo (massimi giornalieri). Il mare viene interrogato sul microservizio
+Open-Meteo (massimi giornalieri; raffiche dal modello `WIND_GUST_MODEL`,
+default GFS come Windguru — stessa taratura delle condizioni attuali).
+Il mare viene interrogato sul microservizio
 [foamy-copernicus](https://github.com/Roncrypto93/foamy-copernicus)
 (`GET /wave?lat=&lon=&date=YYYY-MM-DD`, dataset CMEMS
 `cmems_mod_med_wav_anfc_4.2km_PT1H-i` — un prodotto "analysis **and

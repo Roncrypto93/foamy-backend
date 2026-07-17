@@ -12,18 +12,23 @@ function buildHourlyTimes(days) {
 
 function mockWindResponse(days) {
   const time = buildHourlyTimes(days);
+  // Campi suffissati per modello, come risponde davvero Open-Meteo quando
+  // si chiedono più modelli nella stessa chiamata (best_match + GFS per
+  // le raffiche, vedi WIND_MODEL/GUST_MODEL nel service).
   return {
     daily: {
       time: Array.from({ length: days }, (_, i) => `2026-07-${String(14 + i).padStart(2, "0")}`),
-      wind_speed_10m_max: Array(days).fill(12),
-      wind_gusts_10m_max: Array(days).fill(18),
-      wind_direction_10m_dominant: Array(days).fill(300),
+      wind_speed_10m_max_best_match: Array(days).fill(12),
+      wind_gusts_10m_max_best_match: Array(days).fill(18),
+      wind_gusts_10m_max_gfs_seamless: Array(days).fill(14),
+      wind_direction_10m_dominant_best_match: Array(days).fill(300),
     },
     hourly: {
       time,
-      wind_speed_10m: time.map(() => 10),
-      wind_gusts_10m: time.map(() => 15),
-      wind_direction_10m: time.map(() => 300),
+      wind_speed_10m_best_match: time.map(() => 10),
+      wind_gusts_10m_best_match: time.map(() => 15),
+      wind_gusts_10m_gfs_seamless: time.map(() => 11),
+      wind_direction_10m_best_match: time.map(() => 300),
     },
   };
 }
@@ -85,6 +90,38 @@ describe("dailyMarineService.fetchWeeklyForecast", () => {
     expect(result.days).toHaveLength(7);
     expect(result.chart).toHaveLength(56);
     expect(result.windChart).toHaveLength(56);
+  });
+
+  test("raffiche da GFS (taratura Windguru), velocità/direzione dal modello principale", async () => {
+    global.fetch = mockFetchImpl();
+    const result = await fetchWeeklyForecast(40.3, 18.4);
+
+    // daily: gusts dal mock GFS (14), non da best_match (18)
+    expect(result.days[0].windGustsKn).toBe(14);
+    expect(result.days[0].windSpeedKn).toBe(12);
+    // hourly (grafico): gusts GFS (11), non best_match (15)
+    expect(result.windChart[0].windGustsKn).toBe(11);
+    expect(result.windChart[0].windSpeedKn).toBe(10);
+  });
+
+  test("se GFS non copre il punto (raffiche null), si ricade sulle raffiche del modello principale", async () => {
+    global.fetch = jest.fn((url) => {
+      const u = String(url);
+      if (u.includes("api.open-meteo.com")) {
+        const resp = mockWindResponse(7);
+        resp.daily.wind_gusts_10m_max_gfs_seamless = Array(7).fill(null);
+        resp.hourly.wind_gusts_10m_gfs_seamless = resp.hourly.time.map(() => null);
+        return Promise.resolve({ ok: true, json: async () => resp });
+      }
+      if (u.includes("marine-api.open-meteo.com")) return Promise.resolve({ ok: true, json: async () => mockMarineResponse(7) });
+      if (u.startsWith(COPERNICUS_TEST_URL)) return Promise.resolve({ ok: true, json: async () => ({ waveHeightM: 1.2, wavePeriodS: 6, waveDirectionDeg: 200 }) });
+      throw new Error("URL non mockato: " + u);
+    });
+
+    const result = await fetchWeeklyForecast(40.3, 18.4);
+
+    expect(result.days[0].windGustsKn).toBe(18);
+    expect(result.windChart[0].windGustsKn).toBe(15);
   });
 
   test("interroga Copernicus solo per i primi 3 giorni, non per tutti e 7", async () => {
