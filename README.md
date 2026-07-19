@@ -179,7 +179,7 @@ stessa chiamata Marine di Open-Meteo usata per le onde ECMWF (valore alle
 altezza/periodo/direzione onda.
 
 La risposta include anche `chart`: 56 punti a step di 3 ore sui 7 giorni
-(`{time, waveHeightM, wavePeriodS, waveEnergyKJ}`), per grafici temporali
+(`{time, waveHeightM, wavePeriodS, waveDirectionDeg}`), per grafici temporali
 più densi dei soli 7 punti giornalieri di `days`. Viene sempre da Open-Meteo
 ECMWF, non da Copernicus, per lo stesso motivo di sopra (troppo lento a
 questa risoluzione sul free-tier).

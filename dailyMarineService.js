@@ -90,7 +90,7 @@ async function fetchMarineDaily(lat, lon) {
     latitude: lat,
     longitude: lon,
     daily: "wave_height_max,wave_period_max,wave_direction_dominant",
-    hourly: "wave_height,wave_period,sea_surface_temperature,sea_level_height_msl",
+    hourly: "wave_height,wave_period,wave_direction,sea_surface_temperature,sea_level_height_msl",
     timezone: TIMEZONE,
     forecast_days: FORECAST_DAYS,
   });
@@ -109,7 +109,9 @@ function middayValue(hourly, variable, date) {
 }
 
 // Punti ogni 3 ore (step richiesto) per il grafico "Onda Idrodinamica":
-// altezza onda + periodo, dalla stessa serie oraria ECMWF già scaricata.
+// altezza onda + periodo + direzione, dalla stessa serie oraria ECMWF già
+// scaricata (direzione per colonna, non solo l'aggregato giornaliero di
+// `days`, per la freccia ad ogni punto del grafico).
 function buildChartSeries(ecmwfMarine) {
   const hourly = ecmwfMarine?.hourly;
   if (!hourly?.time) return [];
@@ -119,6 +121,7 @@ function buildChartSeries(ecmwfMarine) {
       time: hourly.time[i],
       waveHeightM: roundTo(hourly.wave_height?.[i], 2),
       wavePeriodS: roundTo(hourly.wave_period?.[i], 1),
+      waveDirectionDeg: roundTo(hourly.wave_direction?.[i], 0),
     });
   }
   return points;

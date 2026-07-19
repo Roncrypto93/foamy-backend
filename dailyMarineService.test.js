@@ -46,6 +46,7 @@ function mockMarineResponse(days) {
       time,
       wave_height: time.map(() => 0.6),
       wave_period: time.map(() => 4.5),
+      wave_direction: time.map(() => 240),
       sea_surface_temperature: time.map(() => 24),
       sea_level_height_msl: time.map(() => 0.1),
     },
@@ -90,6 +91,13 @@ describe("dailyMarineService.fetchWeeklyForecast", () => {
     expect(result.days).toHaveLength(7);
     expect(result.chart).toHaveLength(56);
     expect(result.windChart).toHaveLength(56);
+  });
+
+  test("il grafico onda include la direzione per ogni punto a 3h, non solo l'aggregato giornaliero", async () => {
+    global.fetch = mockFetchImpl();
+    const result = await fetchWeeklyForecast(40.3, 18.4);
+
+    expect(result.chart[0].waveDirectionDeg).toBe(240);
   });
 
   test("raffiche da GFS (taratura Windguru), velocità/direzione dal modello principale", async () => {
