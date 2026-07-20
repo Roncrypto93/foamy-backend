@@ -40,9 +40,17 @@ async function fetchModel(lat, lon, model) {
   return response.json();
 }
 
+// Controlla sia altezza che periodo: ecmwf_wam025 (il primo modello
+// tentato sotto) restituisce wave_height valido ma swell_wave_period
+// sempre null (il modello non ha la scomposizione swell/mare da vento),
+// quindi un controllo sulla sola altezza non fa mai scattare il fallback
+// e il periodo resta null in modo silenzioso.
 function hasUsableWaveData(data) {
-  const arr = data?.hourly?.wave_height;
-  return Array.isArray(arr) && arr.some((v) => v !== null && v !== undefined);
+  const height = data?.hourly?.wave_height;
+  const period = data?.hourly?.swell_wave_period;
+  const hasHeight = Array.isArray(height) && height.some((v) => v !== null && v !== undefined);
+  const hasPeriod = Array.isArray(period) && period.some((v) => v !== null && v !== undefined);
+  return hasHeight && hasPeriod;
 }
 
 function getCurrentHourIndex(timezone) {
