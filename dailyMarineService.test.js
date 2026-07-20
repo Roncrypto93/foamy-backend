@@ -39,13 +39,13 @@ function mockMarineResponse(days) {
     daily: {
       time: Array.from({ length: days }, (_, i) => `2026-07-${String(14 + i).padStart(2, "0")}`),
       wave_height_max: Array(days).fill(0.8),
-      wave_period_max: Array(days).fill(5),
+      swell_wave_period_max: Array(days).fill(5),
       wave_direction_dominant: Array(days).fill(250),
     },
     hourly: {
       time,
       wave_height: time.map(() => 0.6),
-      wave_period: time.map(() => 4.5),
+      swell_wave_period: time.map(() => 4.5),
       wave_direction: time.map(() => 240),
       sea_surface_temperature: time.map(() => 24),
       sea_level_height_msl: time.map(() => 0.1),

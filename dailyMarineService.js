@@ -78,19 +78,25 @@ function buildWindChartSeries(wind) {
 // giornaliero + serie oraria), temperatura superficiale del mare e livello
 // del mare (sea_level_height_msl, il proxy più vicino alla marea astronomica
 // che Open-Meteo espone: include marea + effetto barometro inverso + altro).
-// La serie oraria di wave_height/wave_period alimenta anche il grafico a
-// step di 3 ore (vedi buildChartSeries): Copernicus reale non è praticabile
-// a questa risoluzione (56 chiamate da fino a 45s ciascuna sul free-tier
-// sarebbero troppo lente), quindi il grafico usa lo stesso ECMWF affidabile
-// già in uso per temperatura/marea. I valori di riepilogo giornaliero in
-// `days` restano invece da Copernicus reale per i primi COPERNICUS_REAL_DAYS
-// giorni.
+// La serie oraria di wave_height/swell_wave_period alimenta anche il
+// grafico a step di 3 ore (vedi buildChartSeries): Copernicus reale non è
+// praticabile a questa risoluzione (56 chiamate da fino a 45s ciascuna sul
+// free-tier sarebbero troppo lente), quindi il grafico usa lo stesso ECMWF
+// affidabile già in uso per temperatura/marea. I valori di riepilogo
+// giornaliero in `days` restano invece da Copernicus reale per i primi
+// COPERNICUS_REAL_DAYS giorni.
+//
+// Periodo: swell_wave_period (media della sola componente swell) invece di
+// wave_period (media di swell+mare da vento mescolati) — quest'ultimo
+// annacqua uno swell pulito con il rumore a periodo corto del mare da
+// vento, facendo sembrare le condizioni peggiori di quanto siano davvero
+// per un surfista.
 async function fetchMarineDaily(lat, lon) {
   const params = new URLSearchParams({
     latitude: lat,
     longitude: lon,
-    daily: "wave_height_max,wave_period_max,wave_direction_dominant",
-    hourly: "wave_height,wave_period,wave_direction,sea_surface_temperature,sea_level_height_msl",
+    daily: "wave_height_max,swell_wave_period_max,wave_direction_dominant",
+    hourly: "wave_height,swell_wave_period,wave_direction,sea_surface_temperature,sea_level_height_msl",
     timezone: TIMEZONE,
     forecast_days: FORECAST_DAYS,
   });
@@ -120,7 +126,7 @@ function buildChartSeries(ecmwfMarine) {
     points.push({
       time: hourly.time[i],
       waveHeightM: roundTo(hourly.wave_height?.[i], 2),
-      wavePeriodS: roundTo(hourly.wave_period?.[i], 1),
+      wavePeriodS: roundTo(hourly.swell_wave_period?.[i], 1),
       waveDirectionDeg: roundTo(hourly.wave_direction?.[i], 0),
     });
   }
@@ -178,7 +184,7 @@ async function fetchWeeklyForecast(lat, lon) {
 
   const days = dates.map((date, i) => {
     const ecmwfHeight = ecmwfMarine?.daily?.wave_height_max?.[i] ?? null;
-    const ecmwfPeriod = ecmwfMarine?.daily?.wave_period_max?.[i] ?? null;
+    const ecmwfPeriod = ecmwfMarine?.daily?.swell_wave_period_max?.[i] ?? null;
     const ecmwfDirection = ecmwfMarine?.daily?.wave_direction_dominant?.[i] ?? null;
 
     const copernicus = copernicusResults[i];

@@ -12,7 +12,11 @@ const BASE_URL =
   process.env.OPEN_METEO_MARINE_URL || "https://marine-api.open-meteo.com/v1/marine";
 
 const TIMEZONE = "Europe/Rome";
-const HOURLY_VARS = "wave_height,wave_period,wave_direction";
+// swell_wave_period (non wave_period) per il periodo: è la media calcolata
+// sulla sola componente swell, non annacquata dal mare da vento mescolato
+// dentro la media combinata di wave_period. Vedi commento su energyFrom
+// lato frontend per il ragionamento completo.
+const HOURLY_VARS = "wave_height,swell_wave_period,wave_direction";
 
 async function fetchModel(lat, lon, model) {
   const params = new URLSearchParams({
@@ -72,7 +76,7 @@ async function fetchOpenMeteoMarine(lat, lon) {
   return {
     source: modelUsed,
     waveHeightM: roundTo(hourly.wave_height?.[safeIdx], 2),
-    wavePeriodS: roundTo(hourly.wave_period?.[safeIdx], 1),
+    wavePeriodS: roundTo(hourly.swell_wave_period?.[safeIdx], 1),
     waveDirectionDeg: roundTo(hourly.wave_direction?.[safeIdx], 0),
     timestamp: hourly.time?.[safeIdx] ?? new Date().toISOString(),
   };
