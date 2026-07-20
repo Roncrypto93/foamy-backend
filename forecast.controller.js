@@ -100,11 +100,20 @@ async function getForecastBySpotId(req, res) {
         lat: spot.lat,
         lon: spot.lon,
       },
-      wind: {
-        speedKn: applyWindCorrection(wind.windSpeedKn),
-        gustsKn: wind.windGustsKn,
-        directionDeg: wind.windDirectionDeg,
-      },
+      wind: (() => {
+        // gustFloor() in weatherService.js garantisce raffiche >= velocità
+        // sul dato grezzo, ma qui sopra la velocità viene corretta (+0.5kn
+        // di taratura anemometro) SENZA correggere le raffiche: se il
+        // margine originale era piccolo, la raffica corretta può finire
+        // sotto la velocità corretta. Va riverificato con la velocità già
+        // corretta, non con quella grezza.
+        const speedKn = applyWindCorrection(wind.windSpeedKn);
+        return {
+          speedKn,
+          gustsKn: gustFloor(wind.windGustsKn, speedKn),
+          directionDeg: wind.windDirectionDeg,
+        };
+      })(),
       sea: {
         waveHeightM: merged.waveHeightM,
         wavePeriodS: merged.wavePeriodS,
@@ -137,6 +146,16 @@ async function getForecastBySpotId(req, res) {
 function applyWindCorrection(value) {
   if (value === undefined || value === null || Number.isNaN(value)) return null;
   return Math.round((value + WIND_SPEED_CORRECTION_KN) * 10) / 10;
+}
+
+// Una raffica non può mai essere fisicamente più bassa della velocità
+// media. Stessa guardia già presente in weatherService.js e
+// dailyMarineService.js, duplicata qui perché applyWindCorrection() può
+// da sola rompere l'invariante impostata a monte (vedi commento sopra).
+function gustFloor(gusts, speed) {
+  if (gusts === undefined || gusts === null) return speed;
+  if (speed === undefined || speed === null) return gusts;
+  return Math.max(gusts, speed);
 }
 
 module.exports = { getForecastBySpotId };

@@ -122,6 +122,22 @@ describe("GET /api/forecast/:spotId", () => {
     expect(fetchCopernicusMarine).toHaveBeenCalledTimes(1);
   });
 
+  test("la correzione di velocità non deve mai far scendere le raffiche sotto la velocità corretta", async () => {
+    // Margine originale (9.2 - 9 = 0.2) più piccolo della correzione
+    // (+0.5): la velocità corretta (9.5) supererebbe le raffiche grezze
+    // (9.2) se non si riapplicasse il pavimento dopo la correzione — bug
+    // reale trovato confrontando i dati live su più spot.
+    fetchWindForecast.mockResolvedValue({ windSpeedKn: 9, windGustsKn: 9.2, windDirectionDeg: 180 });
+    fetchOpenMeteoMarine.mockResolvedValue(ECMWF_MOCK);
+    fetchCopernicusMarine.mockResolvedValue(COPERNICUS_MOCK);
+
+    const res = await request(app).get("/api/forecast/otranto");
+
+    expect(res.body.wind.speedKn).toBe(9.5);
+    expect(res.body.wind.gustsKn).toBe(9.5);
+    expect(res.body.wind.gustsKn).toBeGreaterThanOrEqual(res.body.wind.speedKn);
+  });
+
   test("dato vento nullo: la correzione non lo trasforma in un numero (resta null)", async () => {
     fetchWindForecast.mockResolvedValue({ windSpeedKn: null, windGustsKn: null, windDirectionDeg: 200 });
     fetchOpenMeteoMarine.mockResolvedValue(ECMWF_MOCK);
