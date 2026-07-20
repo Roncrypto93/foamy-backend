@@ -69,8 +69,8 @@ describe("GET /api/forecast/:spotId", () => {
     expect(res.body.sea.wavePeriodS).toBeCloseTo(6.5, 5);
     // direzione: priorità a Copernicus (55)
     expect(res.body.sea.waveDirectionDeg).toBe(55);
-    // energia: 0.5 * 1.2^2 * 6.5 * 10 = 46.8 -> 47
-    expect(res.body.sea.waveEnergyKJ).toBe(47);
+    // energia: 1.2^2 * 6.5 * 10 = 93.6 -> 94
+    expect(res.body.sea.waveEnergyKJ).toBe(94);
     expect(res.body.sea.seaState).toBe("Forza 3 - Mosso");
     expect(res.body.sea.copernicusDegraded).toBe(false);
     expect(res.body.webcam_banner).toBeDefined();

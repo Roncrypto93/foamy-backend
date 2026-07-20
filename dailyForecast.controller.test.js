@@ -76,8 +76,8 @@ describe("GET /api/forecast/:spotId/daily", () => {
 
     const day0 = res.body.days[0];
     expect(day0.wind).toEqual({ speedKn: 12.5, gustsKn: 18.2, directionDeg: 315 });
-    // energia: 0.5 * 1.4^2 * 7 * 10 = 68.6 -> 69
-    expect(day0.sea.waveEnergyKJ).toBe(69);
+    // energia: 1.4^2 * 7 * 10 = 137.2 -> 137
+    expect(day0.sea.waveEnergyKJ).toBe(137);
     expect(day0.sea.seaState).toBe("Forza 4 - Molto Mosso");
     expect(day0.sea.copernicusDegraded).toBe(false);
     expect(day0.sea.waterTempC).toBe(24.3);
@@ -89,8 +89,8 @@ describe("GET /api/forecast/:spotId/daily", () => {
     expect(day2.sea.seaState).toBe("N/D");
 
     expect(res.body.chart).toHaveLength(3);
-    // energia primo punto: 0.5 * 1.1^2 * 6.5 * 10 = 39.325 -> 39
-    expect(res.body.chart[0]).toEqual({ time: "2026-07-14T00:00", waveHeightM: 1.1, wavePeriodS: 6.5, waveEnergyKJ: 39 });
+    // energia primo punto: 1.1^2 * 6.5 * 10 = 78.65 -> 79
+    expect(res.body.chart[0]).toEqual({ time: "2026-07-14T00:00", waveHeightM: 1.1, wavePeriodS: 6.5, waveEnergyKJ: 79 });
 
     expect(res.body.windChart).toHaveLength(3);
     expect(res.body.windChart[1]).toEqual({ time: "2026-07-14T03:00", windSpeedKn: 12.5, windGustsKn: 18.2, windDirectionDeg: 315 });

@@ -30,17 +30,19 @@ function mergeMarineData(openMeteoData, copernicusData) {
 
 /**
  * Calcola l'energia dell'onda stimata in kJ.
- * Formula da specifica: Energia = 0.5 * (Altezza^2) * Periodo * 10
- * (arrotondata a intero).
+ * Formula: Energia = (Altezza^2) * Periodo * 10 (arrotondata a intero).
  *
- * Nota fisica: questa è una formula semplificata "in stile Surf-Forecast"
- * per dare un indice comparabile di potenza dell'onda, non la formula
- * oceanografica completa del flusso di energia (che include densità
- * dell'acqua e gravità). La implementiamo esattamente come da brief.
+ * Nota fisica: non è la formula oceanografica reale del flusso di
+ * energia (che userebbe densità dell'acqua e gravità, dando numeri in
+ * kW/m a una cifra — es. ~3.5 kW/m per un'onda 1.2m/5s). È un indice
+ * comparabile "in stile Surf-Forecast", tarato per allinearsi ai numeri
+ * che i surfisti già vedono su altre piattaforme: confrontato punto per
+ * punto con i valori orari mostrati da surf-forecast.com per lo stesso
+ * spot, questa costante (10, non 5) riproduce i loro numeri quasi esatti.
  */
 function calculateWaveEnergyKJ(waveHeightM, wavePeriodS) {
   if (waveHeightM === null || wavePeriodS === null) return null;
-  const energy = 0.5 * waveHeightM ** 2 * wavePeriodS * 10;
+  const energy = waveHeightM ** 2 * wavePeriodS * 10;
   return Math.round(energy);
 }
 

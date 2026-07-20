@@ -2,7 +2,7 @@ const {
   mergeMarineData,
   calculateWaveEnergyKJ,
   getDouglasSeaState,
-} = require("../src/utils/waveCalculations");
+} = require("./waveCalculations");
 
 describe("mergeMarineData", () => {
   test("calcola la media aritmetica di altezza e periodo tra le due fonti", () => {
@@ -47,16 +47,16 @@ describe("mergeMarineData", () => {
 });
 
 describe("calculateWaveEnergyKJ", () => {
-  test("applica correttamente la formula Energia = 0.5 * altezza^2 * periodo * 10", () => {
-    // 0.5 * 1^2 * 8 * 10 = 40
-    expect(calculateWaveEnergyKJ(1, 8)).toBe(40);
-    // 0.5 * 2^2 * 6 * 10 = 120
-    expect(calculateWaveEnergyKJ(2, 6)).toBe(120);
+  test("applica correttamente la formula Energia = altezza^2 * periodo * 10", () => {
+    // 1^2 * 8 * 10 = 80
+    expect(calculateWaveEnergyKJ(1, 8)).toBe(80);
+    // 2^2 * 6 * 10 = 240
+    expect(calculateWaveEnergyKJ(2, 6)).toBe(240);
   });
 
   test("arrotonda il risultato a numero intero", () => {
-    // 0.5 * 1.3^2 * 7.4 * 10 = 62.53 -> 63
-    expect(calculateWaveEnergyKJ(1.3, 7.4)).toBe(63);
+    // 1.3^2 * 7.4 * 10 = 125.06 -> 125
+    expect(calculateWaveEnergyKJ(1.3, 7.4)).toBe(125);
   });
 
   test("restituisce null se manca altezza o periodo", () => {

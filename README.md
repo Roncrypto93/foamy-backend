@@ -133,7 +133,10 @@ Esegue in parallelo:
    microservizio separato foamy-copernicus.
 4. Merge: media altezza/periodo, direzione onda prioritaria da Copernicus
    (quando disponibile).
-5. Calcolo energia onda: `0.5 * altezza² * periodo * 10` (kJ, arrotondato).
+5. Calcolo energia onda: `altezza² * periodo * 10` (kJ, arrotondato) — indice
+   in stile Surf-Forecast, non la formula oceanografica reale del flusso di
+   energia (che darebbe kW/m a una cifra, non kJ a due/tre cifre). Costante
+   tarata confrontando punto per punto con i valori orari di surf-forecast.com.
 6. Mappatura Scala Douglas (5 livelli).
 7. Correzione manuale fissa su `wind.speedKn` (non su `wind.gustsKn`, che
    resta il dato Open-Meteo grezzo): `+ WIND_SPEED_CORRECTION_KN` (default
