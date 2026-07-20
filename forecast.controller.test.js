@@ -32,11 +32,13 @@ beforeEach(() => {
 });
 
 describe("GET /api/spots", () => {
-  test("risponde 200 con 20 spot", async () => {
+  // 20 Puglia + 57 Sicilia (province di Trapani, Palermo, Agrigento, Ragusa,
+  // Siracusa, Catania, Messina) — vedi spots.js per il dettaglio.
+  test("risponde 200 con 77 spot (Puglia + Sicilia)", async () => {
     const res = await request(app).get("/api/spots");
     expect(res.status).toBe(200);
-    expect(res.body.count).toBe(20);
-    expect(res.body.spots).toHaveLength(20);
+    expect(res.body.count).toBe(77);
+    expect(res.body.spots).toHaveLength(77);
   });
 });
 
