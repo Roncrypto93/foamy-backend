@@ -8,17 +8,18 @@
  * Puglia (Salento ionico) sia per la Sicilia (costa orientale) — sono mari
  * diversi nella realtà, `region` li distingue.
  *
- * coastOrientationDeg (solo 19 dei 20 spot Puglia, "wave" o meno): la
- * direzione (0-360°, 0=Nord) verso cui guarda la spiaggia, cioè la
- * direzione "onshore" da mare a terra — serve a calculateSurfRating() in
- * waveCalculations.js per capire se il vento è offshore/cross/onshore.
- * Sono STIME da conoscenza geografica generale (luglio 2026), non
- * misurazioni: da verificare via mappa satellitare prima di considerarle
- * definitive, stesso livello di trasparenza già usato per coordsSource
- * sugli spot Sicilia. "otranto" non ha ancora questo campo (mancava dalla
- * lista fornita per la stima) — calculateSurfRating() lo gestisce comunque
- * senza errori, degradando al solo livello base finché non arriva un
- * valore. Non presente sugli spot Sicilia in questo momento.
+ * coastOrientationDeg (tutti i 20 spot Puglia): la direzione (0-360°,
+ * 0=Nord) verso cui guarda la spiaggia, cioè la direzione "onshore" da
+ * mare a terra — serve a calculateSurfRating() in waveCalculations.js per
+ * capire se il vento è offshore/cross/onshore. Sono STIME da conoscenza
+ * geografica generale (luglio 2026), non misurazioni: da verificare via
+ * mappa satellitare prima di considerarle definitive, stesso livello di
+ * trasparenza già usato per coordsSource sugli spot Sicilia. "otranto" era
+ * mancante dalla lista originale fornita per la stima — aggiunto in un
+ * secondo momento (80°, dedotto dal fatto che lo spot lavora sia con
+ * Scirocco SE sia con Grecale NE secondo la sua stessa descrizione
+ * tecnica), stessa cautela: da verificare via mappa satellitare. Non
+ * presente sugli spot Sicilia in questo momento.
  *
  * coast per la Sicilia: "Tirreno" (costa nord, Trapani nord → Messina lato
  * tirrenico), "Ionio" (costa est, Messina lato ionico → Siracusa fino a
@@ -224,7 +225,7 @@ const SPOTS = [
     }
   },
   {
-    id: "otranto", name: "Otranto", coast: "Adriatico", region: "Puglia", disciplines: ["wave"], lat: 40.1479, lon: 18.4868,
+    id: "otranto", name: "Otranto", coast: "Adriatico", region: "Puglia", disciplines: ["wave"], lat: 40.1479, lon: 18.4868, coastOrientationDeg: 80,
     webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/it/webcam/italia/puglia/lecce/tour-porto-di-otranto.html", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Roccia/misto — costa frastagliata nei pressi del centro storico e del porto",

@@ -79,4 +79,18 @@ describe("Database spot Puglia + Sicilia", () => {
       expect(["surfline", "estimate"]).toContain(spot.coordsSource);
     }
   );
+
+  // coastOrientationDeg serve a calculateSurfRating() (waveCalculations.js)
+  // per capire se il vento è offshore/cross/onshore — solo Puglia per ora.
+  // Non testiamo un valore preciso (sono stime, non misurazioni), solo che
+  // il campo esista ed sia un numero 0-360 plausibile, così un refuso tipo
+  // "Otranto mancante dalla lista" (già capitato una volta) viene beccato.
+  test.each(SPOTS.filter((s) => s.region === "Puglia").map((s) => [s.id, s]))(
+    "%s (Puglia) ha coastOrientationDeg valido (0-360°)",
+    (id, spot) => {
+      expect(typeof spot.coastOrientationDeg).toBe("number");
+      expect(spot.coastOrientationDeg).toBeGreaterThanOrEqual(0);
+      expect(spot.coastOrientationDeg).toBeLessThanOrEqual(360);
+    }
+  );
 });
