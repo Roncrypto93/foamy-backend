@@ -9,7 +9,7 @@
 
 const SPOTS = require("./spots");
 const { fetchWeeklyForecast } = require("./dailyMarineService");
-const { calculateWaveEnergyKJ, getDouglasSeaState } = require("./waveCalculations");
+const { calculateWaveEnergyKJ, getDouglasSeaState, calculateSurfRating } = require("./waveCalculations");
 const forecastCache = require("./forecastCache");
 
 async function getDailyForecastBySpotId(req, res) {
@@ -32,6 +32,10 @@ async function getDailyForecastBySpotId(req, res) {
   try {
     const { days, chart, windChart } = await fetchWeeklyForecast(spot.lat, spot.lon);
 
+    // Punteggio surf SOLO per gli spot che fanno surf (kite/windsurf fuori
+    // scope), stessa condizione già usata in forecast.controller.js.
+    const isWaveSpot = spot.disciplines.includes("wave");
+
     const payload = {
       spot: { id: spot.id, name: spot.name, coast: spot.coast },
       days: days.map((d) => ({
@@ -47,6 +51,9 @@ async function getDailyForecastBySpotId(req, res) {
           waveDirectionDeg: d.sea.waveDirectionDeg,
           waveEnergyKJ: calculateWaveEnergyKJ(d.sea.waveHeightM, d.sea.wavePeriodS),
           seaState: getDouglasSeaState(d.sea.waveHeightM),
+          ...(isWaveSpot
+            ? { surfRating: calculateSurfRating(d.sea.waveHeightM, d.sea.wavePeriodS, d.windSpeedKn, d.windDirectionDeg, spot.coastOrientationDeg) }
+            : {}),
           source: d.sea.source,
           copernicusDegraded: d.copernicusDegraded,
           waterTempC: d.sea.waterTempC,
@@ -56,12 +63,22 @@ async function getDailyForecastBySpotId(req, res) {
       // Serie a step di 3 ore (56 punti sui 7 giorni) per il grafico "Onda
       // Idrodinamica": sempre da Open-Meteo/ECMWF, non da Copernicus (vedi
       // nota in dailyMarineService.js sul perché non è praticabile a questa
-      // risoluzione sul free-tier).
-      chart: chart.map((p) => ({
+      // risoluzione sul free-tier). windChart[i] è allineato per indice a
+      // chart[i] (stessa griglia oraria a step di 3, stesso timezone e
+      // forecast_days sia per vento che per mare), serve per il punteggio
+      // surf punto per punto.
+      chart: chart.map((p, i) => ({
         time: p.time,
         waveHeightM: p.waveHeightM,
         wavePeriodS: p.wavePeriodS,
+        // Mancava dalla risposta pur essendo già calcolata a monte in
+        // dailyMarineService.js: le frecce di direzione sul grafico onda
+        // non avevano mai il dato in produzione.
+        waveDirectionDeg: p.waveDirectionDeg,
         waveEnergyKJ: calculateWaveEnergyKJ(p.waveHeightM, p.wavePeriodS),
+        ...(isWaveSpot
+          ? { surfRating: calculateSurfRating(p.waveHeightM, p.wavePeriodS, windChart[i]?.windSpeedKn, windChart[i]?.windDirectionDeg, spot.coastOrientationDeg) }
+          : {}),
       })),
       // Stessa risoluzione a 3 ore del grafico onde, per il grafico vento a
       // barre colorate per intensità.

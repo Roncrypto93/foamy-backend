@@ -41,9 +41,9 @@ const DAYS_MOCK = [
 ];
 
 const CHART_MOCK = [
-  { time: "2026-07-14T00:00", waveHeightM: 1.1, wavePeriodS: 6.5 },
-  { time: "2026-07-14T03:00", waveHeightM: 1.4, wavePeriodS: 7.0 },
-  { time: "2026-07-14T06:00", waveHeightM: 0.9, wavePeriodS: 5.8 },
+  { time: "2026-07-14T00:00", waveHeightM: 1.1, wavePeriodS: 6.5, waveDirectionDeg: 55 },
+  { time: "2026-07-14T03:00", waveHeightM: 1.4, wavePeriodS: 7.0, waveDirectionDeg: 50 },
+  { time: "2026-07-14T06:00", waveHeightM: 0.9, wavePeriodS: 5.8, waveDirectionDeg: 45 },
 ];
 
 const WIND_CHART_MOCK = [
@@ -82,18 +82,50 @@ describe("GET /api/forecast/:spotId/daily", () => {
     expect(day0.sea.copernicusDegraded).toBe(false);
     expect(day0.sea.waterTempC).toBe(24.3);
     expect(day0.sea.seaLevelM).toBe(0.12);
+    // Punteggio surf: san-foca ha "wave" tra le discipline e
+    // coastOrientationDeg 70. baseLevel "Ottima" (1.4m/7s -> ">1.2m"x"7-9s"),
+    // vento 315° a 12.5kn è cross-offshore (65° dall'offshore a 250°) ->
+    // bump -> "Perfetto".
+    expect(day0.sea.surfRating).toEqual({ rating: "Perfetto", baseLevel: "Ottima", windEffect: "bump" });
 
     const day2 = res.body.days[2];
     expect(day2.sea.copernicusDegraded).toBe(true);
     expect(day2.sea.waveEnergyKJ).toBeNull();
     expect(day2.sea.seaState).toBe("N/D");
+    // Altezza/periodo mancanti (day2 ha sea nullo): niente punteggio possibile.
+    expect(day2.sea.surfRating).toEqual({ rating: null, baseLevel: null, windEffect: "unavailable" });
 
     expect(res.body.chart).toHaveLength(3);
-    // energia primo punto: 1.1^2 * 6.5 * 10 = 78.65 -> 79
-    expect(res.body.chart[0]).toEqual({ time: "2026-07-14T00:00", waveHeightM: 1.1, wavePeriodS: 6.5, waveEnergyKJ: 79 });
+    // energia primo punto: 1.1^2 * 6.5 * 10 = 78.65 -> 79. waveDirectionDeg
+    // ora presente (mancava dalla risposta, bug trovato e corretto). Stesso
+    // ragionamento del punteggio di day0 sopra ma con windChart[0]
+    // (10.2kn/310°, cross-offshore anche questo) -> baseLevel "Ottima"
+    // (1.1m/6.5s -> "0.8-1.2m"x"5.5-7s") -> bump -> "Perfetto".
+    expect(res.body.chart[0]).toEqual({
+      time: "2026-07-14T00:00",
+      waveHeightM: 1.1,
+      wavePeriodS: 6.5,
+      waveDirectionDeg: 55,
+      waveEnergyKJ: 79,
+      surfRating: { rating: "Perfetto", baseLevel: "Ottima", windEffect: "bump" },
+    });
 
     expect(res.body.windChart).toHaveLength(3);
     expect(res.body.windChart[1]).toEqual({ time: "2026-07-14T03:00", windSpeedKn: 12.5, windGustsKn: 18.2, windDirectionDeg: 315 });
+  });
+
+  test("nessun surfRating per spot senza disciplina 'wave' (kite/windsurf fuori scope)", async () => {
+    // Spot diverso da quello usato nel test della cache più sotto
+    // (bari-pane-pomodoro): forecastCache non è mockato, quindi lo stato
+    // resta condiviso tra i test di questo file — riusare lo stesso spot
+    // farebbe risultare "già in cache" il primo request di quel test.
+    fetchWeeklyForecast.mockResolvedValue(WEEK_MOCK);
+
+    const res = await request(app).get("/api/forecast/torre-guaceto/daily");
+
+    expect(res.status).toBe(200);
+    expect(res.body.days[0].sea.surfRating).toBeUndefined();
+    expect(res.body.chart[0].surfRating).toBeUndefined();
   });
 
   test("502 se il recupero del forecast fallisce del tutto", async () => {
