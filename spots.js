@@ -8,6 +8,18 @@
  * Puglia (Salento ionico) sia per la Sicilia (costa orientale) — sono mari
  * diversi nella realtà, `region` li distingue.
  *
+ * coastOrientationDeg (solo 19 dei 20 spot Puglia, "wave" o meno): la
+ * direzione (0-360°, 0=Nord) verso cui guarda la spiaggia, cioè la
+ * direzione "onshore" da mare a terra — serve a calculateSurfRating() in
+ * waveCalculations.js per capire se il vento è offshore/cross/onshore.
+ * Sono STIME da conoscenza geografica generale (luglio 2026), non
+ * misurazioni: da verificare via mappa satellitare prima di considerarle
+ * definitive, stesso livello di trasparenza già usato per coordsSource
+ * sugli spot Sicilia. "otranto" non ha ancora questo campo (mancava dalla
+ * lista fornita per la stima) — calculateSurfRating() lo gestisce comunque
+ * senza errori, degradando al solo livello base finché non arriva un
+ * valore. Non presente sugli spot Sicilia in questo momento.
+ *
  * coast per la Sicilia: "Tirreno" (costa nord, Trapani nord → Messina lato
  * tirrenico), "Ionio" (costa est, Messina lato ionico → Siracusa fino a
  * Capo Passero), "Canale di Sicilia" (costa sud/sud-ovest, da Capo Passero
@@ -41,7 +53,7 @@
 const SPOTS = [
   // ==================== PUGLIA (20 spot) ====================
   {
-    id: "san-foca", name: "San Foca (Li Marangi)", coast: "Adriatico", region: "Puglia", disciplines: ["wave", "kite"], lat: 40.3283, lon: 18.3639,
+    id: "san-foca", name: "San Foca (Li Marangi)", coast: "Adriatico", region: "Puglia", disciplines: ["wave", "kite"], lat: 40.3283, lon: 18.3639, coastOrientationDeg: 70,
     webcam_banner: { provider: "Webcam Li Marangi", url: "http://ffmpeg.pwad.it/videos/sanfoca.mp4?t=20230517165515", note: "Il link apre il file video direttamente in una nuova scheda (il sito non supporta connessioni sicure, quindi non può essere mostrato dentro la pagina)." },
     spot_info: {
       fondale: "Sabbia, con alcune formazioni rocciose che creano piscine naturali vicino riva",
@@ -50,7 +62,7 @@ const SPOTS = [
     }
   },
   {
-    id: "torre-dellorso", name: "Torre dell'Orso", coast: "Adriatico", region: "Puglia", disciplines: ["wave"], lat: 40.2717, lon: 18.4235,
+    id: "torre-dellorso", name: "Torre dell'Orso", coast: "Adriatico", region: "Puglia", disciplines: ["wave"], lat: 40.2717, lon: 18.4235, coastOrientationDeg: 65,
     webcam_banner: null,
     spot_info: {
       fondale: "Misto — sabbia finissima con formazioni rocciose (gli scogli delle 'Due Sorelle') e scogli sommersi",
@@ -59,7 +71,7 @@ const SPOTS = [
     }
   },
   {
-    id: "frassanito", name: "Frassanito", coast: "Adriatico", region: "Puglia", disciplines: ["wind", "kite", "wave"], lat: 40.2261, lon: 18.4584,
+    id: "frassanito", name: "Frassanito", coast: "Adriatico", region: "Puglia", disciplines: ["wind", "kite", "wave"], lat: 40.2261, lon: 18.4584, coastOrientationDeg: 90,
     webcam_banner: { provider: "Eolo Online (stazione meteo/vento live)", url: "https://www.eoloonline.it/frassanito.html", embed_type: "iframe_redirect", note: "Stazione meteo con dati vento in diretta, non una webcam fotografica classica." },
     spot_info: {
       fondale: "Reef/Roccia — piccole rocce sommerse vicino riva, da attenzionare in ingresso e in rientro",
@@ -68,7 +80,7 @@ const SPOTS = [
     }
   },
   {
-    id: "alimini", name: "Alimini", coast: "Adriatico", region: "Puglia", disciplines: ["wind", "kite", "wave"], lat: 40.2519, lon: 18.4506,
+    id: "alimini", name: "Alimini", coast: "Adriatico", region: "Puglia", disciplines: ["wind", "kite", "wave"], lat: 40.2519, lon: 18.4506, coastOrientationDeg: 75,
     webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/en/webcam/italia/puglia/lecce/spiaggia-di-alimini.html", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbia, con tratti misti vicino alla foce dei laghi",
@@ -77,7 +89,7 @@ const SPOTS = [
     }
   },
   {
-    id: "rosamarina-ostuni", name: "Rosamarina di Ostuni", coast: "Adriatico", region: "Puglia", disciplines: ["wave", "wind"], lat: 40.7333, lon: 17.6667,
+    id: "rosamarina-ostuni", name: "Rosamarina di Ostuni", coast: "Adriatico", region: "Puglia", disciplines: ["wave", "wind"], lat: 40.7333, lon: 17.6667, coastOrientationDeg: 50,
     webcam_banner: { provider: "Wind24 (fallback: Porto di Villanova, ~1-2km)", url: "https://www.wind24.it/ostuni/webcam/Porto-turistico-0029", embed_type: "iframe_redirect", fallback: true, note: "Nessuna webcam trovata esattamente su Rosa Marina: mostriamo quella del porto turistico di Villanova, la frazione adiacente." },
     spot_info: {
       fondale: "Sabbia, con pochi scogli",
@@ -86,7 +98,7 @@ const SPOTS = [
     }
   },
   {
-    id: "porto-cesareo-reef", name: "Porto Cesareo (Il Reef)", coast: "Ionio", region: "Puglia", disciplines: ["wave", "wind", "kite"], lat: 40.2606, lon: 17.8994,
+    id: "porto-cesareo-reef", name: "Porto Cesareo (Il Reef)", coast: "Ionio", region: "Puglia", disciplines: ["wave", "wind", "kite"], lat: 40.2606, lon: 17.8994, coastOrientationDeg: 225,
     webcam_banner: { provider: "SkylineWebcams (fallback: centro Porto Cesareo)", url: "https://www.skylinewebcams.com/en/webcam/italia/puglia/lecce/porto-cesareo.html", embed_type: "iframe_redirect", fallback: true, note: "Nessuna webcam dedicata esattamente al Reef/Baia Grande: mostriamo quella del centro di Porto Cesareo." },
     spot_info: {
       fondale: "Misto — reef roccioso nella Baia Grande che forma l'onda, sabbioso nella Laguna della Strea",
@@ -95,7 +107,7 @@ const SPOTS = [
     }
   },
   {
-    id: "vieste-scialmarino", name: "Vieste (Spiaggia di Scialmarino)", coast: "Gargano", region: "Puglia", disciplines: ["wind", "kite"], lat: 41.9036, lon: 16.144,
+    id: "vieste-scialmarino", name: "Vieste (Spiaggia di Scialmarino)", coast: "Gargano", region: "Puglia", disciplines: ["wind", "kite"], lat: 41.9036, lon: 16.144, coastOrientationDeg: 15,
     webcam_banner: { provider: "Vedetta.org", url: "https://vedetta.org/webcam/italia/puglia/foggia/vieste/", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbioso e digradante, protetto a nord da scogliere",
@@ -104,7 +116,7 @@ const SPOTS = [
     }
   },
   {
-    id: "torre-san-giovanni", name: "Torre San Giovanni", coast: "Ionio", region: "Puglia", disciplines: ["wind", "kite"], lat: 39.8508, lon: 18.3311,
+    id: "torre-san-giovanni", name: "Torre San Giovanni", coast: "Ionio", region: "Puglia", disciplines: ["wind", "kite"], lat: 39.8508, lon: 18.3311, coastOrientationDeg: 205,
     webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/en/webcam/italia/puglia/lecce/torre-san-giovanni-ugento.html", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbia bianca fine, bassa, protetta da una fila di isolotti/scogli paralleli alla costa",
@@ -113,7 +125,7 @@ const SPOTS = [
     }
   },
   {
-    id: "gallipoli-baia-verde", name: "Gallipoli (Baia Verde)", coast: "Ionio", region: "Puglia", disciplines: ["wind", "kite", "wave"], lat: 40.0389, lon: 17.9836,
+    id: "gallipoli-baia-verde", name: "Gallipoli (Baia Verde)", coast: "Ionio", region: "Puglia", disciplines: ["wind", "kite", "wave"], lat: 40.0389, lon: 17.9836, coastOrientationDeg: 215,
     webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/it/webcam/italia/puglia/lecce/gallipoli.html", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbioso, spiaggia larga con facile accesso",
@@ -122,7 +134,7 @@ const SPOTS = [
     }
   },
   {
-    id: "campomarino-curvone", name: "Campomarino di Maruggio (Il Curvone)", coast: "Ionio", region: "Puglia", disciplines: ["wave"], lat: 40.3928, lon: 17.6119,
+    id: "campomarino-curvone", name: "Campomarino di Maruggio (Il Curvone)", coast: "Ionio", region: "Puglia", disciplines: ["wave"], lat: 40.3928, lon: 17.6119, coastOrientationDeg: 220,
     webcam_banner: { provider: "Vedetta.org (Torretta Mare)", url: "https://vedetta.org/webcam/italia/puglia/taranto/torretta-mare/", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Roccia/Misto",
@@ -131,7 +143,7 @@ const SPOTS = [
     }
   },
   {
-    id: "torre-lapillo-punta-prosciutto", name: "Torre Lapillo (Gatto Nero)", coast: "Ionio", region: "Puglia", disciplines: ["kite", "wind"], lat: 40.3167, lon: 17.8667,
+    id: "torre-lapillo-punta-prosciutto", name: "Torre Lapillo (Gatto Nero)", coast: "Ionio", region: "Puglia", disciplines: ["kite", "wind"], lat: 40.3167, lon: 17.8667, coastOrientationDeg: 230,
     webcam_banner: { provider: "SkylineWebcams (fallback: Porto Cesareo, ~3-5km)", url: "https://www.skylinewebcams.com/en/webcam/italia/puglia/lecce/porto-cesareo.html", embed_type: "iframe_redirect", fallback: true, note: "Nessuna webcam dedicata trovata esattamente su Torre Lapillo/Punta Prosciutto." },
     spot_info: {
       fondale: "Sabbia, fondale basso e digradante per 50-70 metri dalla riva",
@@ -140,7 +152,7 @@ const SPOTS = [
     }
   },
   {
-    id: "gallipoli-lido-pizzo", name: "Gallipoli (Lido Pizzo)", coast: "Ionio", region: "Puglia", disciplines: ["kite", "wind"], lat: 40.0667, lon: 17.9833,
+    id: "gallipoli-lido-pizzo", name: "Gallipoli (Lido Pizzo)", coast: "Ionio", region: "Puglia", disciplines: ["kite", "wind"], lat: 40.0667, lon: 17.9833, coastOrientationDeg: 230,
     webcam_banner: { provider: "Wind24 (Lido Pizzo)", url: "https://win.wind24.it/gallipoli/webcam/Lido-Pizzo-0022", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Misto — piccola baia sabbiosa con alcune rocce che affiorano vicino alla riva",
@@ -149,7 +161,7 @@ const SPOTS = [
     }
   },
   {
-    id: "bari-pane-pomodoro", name: "Bari (Pane e Pomodoro)", coast: "Adriatico", region: "Puglia", disciplines: ["kite", "wind"], lat: 41.1256, lon: 16.8719,
+    id: "bari-pane-pomodoro", name: "Bari (Pane e Pomodoro)", coast: "Adriatico", region: "Puglia", disciplines: ["kite", "wind"], lat: 41.1256, lon: 16.8719, coastOrientationDeg: 45,
     webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/en/webcam/italia/puglia/bari/spiaggia-di-bari.html", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbia",
@@ -158,7 +170,7 @@ const SPOTS = [
     }
   },
   {
-    id: "monopoli-capitolo", name: "Monopoli (Capitolo)", coast: "Adriatico", region: "Puglia", disciplines: ["wind", "kite", "wave"], lat: 40.9333, lon: 17.2667,
+    id: "monopoli-capitolo", name: "Monopoli (Capitolo)", coast: "Adriatico", region: "Puglia", disciplines: ["wind", "kite", "wave"], lat: 40.9333, lon: 17.2667, coastOrientationDeg: 50,
     webcam_banner: { provider: "IPCamLive", url: "https://www.ipcamlive.com/64a4267102d72", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Misto sabbia-roccia in gran parte dell'area",
@@ -167,7 +179,7 @@ const SPOTS = [
     }
   },
   {
-    id: "torre-guaceto", name: "Torre Guaceto", coast: "Adriatico", region: "Puglia", disciplines: ["kite"], lat: 40.7167, lon: 17.8,
+    id: "torre-guaceto", name: "Torre Guaceto", coast: "Adriatico", region: "Puglia", disciplines: ["kite"], lat: 40.7167, lon: 17.8, coastOrientationDeg: 55,
     webcam_banner: { provider: "SkylineWebcams (Guna Beach)", url: "https://www.skylinewebcams.com/it/webcam/italia/puglia/brindisi/guna-beach.html", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbia",
@@ -176,7 +188,7 @@ const SPOTS = [
     }
   },
   {
-    id: "frigole", name: "Frigole", coast: "Adriatico", region: "Puglia", disciplines: ["kite", "wind"], lat: 40.4667, lon: 18.2667,
+    id: "frigole", name: "Frigole", coast: "Adriatico", region: "Puglia", disciplines: ["kite", "wind"], lat: 40.4667, lon: 18.2667, coastOrientationDeg: 75,
     webcam_banner: null,
     spot_info: {
       fondale: "Sabbia",
@@ -185,7 +197,7 @@ const SPOTS = [
     }
   },
   {
-    id: "torre-canne", name: "Torre Canne", coast: "Adriatico", region: "Puglia", disciplines: ["wind", "kite", "wave"], lat: 40.8167, lon: 17.4333,
+    id: "torre-canne", name: "Torre Canne", coast: "Adriatico", region: "Puglia", disciplines: ["wind", "kite", "wave"], lat: 40.8167, lon: 17.4333, coastOrientationDeg: 50,
     webcam_banner: { provider: "MeteoTorreCanne", url: "https://meteotorrecanne.it", embed_type: "iframe_redirect", fallback: true, note: "Webcam del porto: potrebbe non essere sempre raggiungibile." },
     spot_info: {
       fondale: "Misto — sabbioso nella zona centrale (Bandiera Blu), più roccioso verso sud in direzione Pilone/Rosa Marina",
@@ -194,7 +206,7 @@ const SPOTS = [
     }
   },
   {
-    id: "peschici-baia-manaccora", name: "Peschici (Baia di Manaccora)", coast: "Gargano", region: "Puglia", disciplines: ["wind", "kite"], lat: 41.95, lon: 16.0167,
+    id: "peschici-baia-manaccora", name: "Peschici (Baia di Manaccora)", coast: "Gargano", region: "Puglia", disciplines: ["wind", "kite"], lat: 41.95, lon: 16.0167, coastOrientationDeg: 5,
     webcam_banner: { provider: "Vedetta.org", url: "https://vedetta.org/webcam/italia/puglia/foggia/peschici-manaccora/", embed_type: "iframe_redirect" },
     spot_info: {
       fondale: "Sabbia fine, con scogliere/promontori rocciosi ai lati della baia",
@@ -203,7 +215,7 @@ const SPOTS = [
     }
   },
   {
-    id: "marina-di-lesina", name: "Marina di Lesina", coast: "Gargano", region: "Puglia", disciplines: ["wind", "kite"], lat: 41.8833, lon: 15.3667,
+    id: "marina-di-lesina", name: "Marina di Lesina", coast: "Gargano", region: "Puglia", disciplines: ["wind", "kite"], lat: 41.8833, lon: 15.3667, coastOrientationDeg: 5,
     webcam_banner: { provider: "Vedetta.org", url: "https://vedetta.org/webcam/italia/puglia/foggia/lesina-comune1/", embed_type: "iframe_redirect", note: "La webcam inquadra il comune/lungomare di Lesina; lo spot kite reale è sul Lago di Lesina, la laguna a sud della marina." },
     spot_info: {
       fondale: "Bacino lacustre salmastro (Lago di Lesina), profondità massima 1,5m, flat water — non è uno spot di mare aperto",

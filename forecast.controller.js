@@ -15,6 +15,7 @@ const {
   mergeMarineData,
   calculateWaveEnergyKJ,
   getDouglasSeaState,
+  calculateSurfRating,
 } = require("./waveCalculations");
 const forecastCache = require("./forecastCache");
 
@@ -91,6 +92,35 @@ async function getForecastBySpotId(req, res) {
     const waveEnergyKJ = calculateWaveEnergyKJ(merged.waveHeightM, merged.wavePeriodS);
     const seaState = getDouglasSeaState(merged.waveHeightM);
 
+    // gustFloor() in weatherService.js garantisce raffiche >= velocità sul
+    // dato grezzo, ma la velocità viene corretta (+0.5kn di taratura
+    // anemometro) SENZA correggere le raffiche: se il margine originale
+    // era piccolo, la raffica corretta può finire sotto la velocità
+    // corretta. Va riverificato con la velocità già corretta, non quella
+    // grezza. Estratto in una variabile (non più una IIFE inline) perché
+    // il punteggio surf sotto ha bisogno di leggere lo stesso vento
+    // "finale" già mostrato all'utente, non il dato grezzo.
+    const windSpeedKn = applyWindCorrection(wind.windSpeedKn);
+    const windPayload = {
+      speedKn: windSpeedKn,
+      gustsKn: gustFloor(wind.windGustsKn, windSpeedKn),
+      directionDeg: wind.windDirectionDeg,
+    };
+
+    // Punteggio qualità SOLO per gli spot che fanno surf — kite/windsurf
+    // hanno una logica diversa, fuori scope. calculateSurfRating() non
+    // lancia mai: se manca coastOrientationDeg sullo spot (o il vento),
+    // degrada da sola a solo livello base con windEffect "unavailable".
+    const surfRating = spot.disciplines.includes("wave")
+      ? calculateSurfRating(
+          merged.waveHeightM,
+          merged.wavePeriodS,
+          windPayload.speedKn,
+          windPayload.directionDeg,
+          spot.coastOrientationDeg
+        )
+      : undefined;
+
     const payload = {
       spot: {
         id: spot.id,
@@ -100,26 +130,14 @@ async function getForecastBySpotId(req, res) {
         lat: spot.lat,
         lon: spot.lon,
       },
-      wind: (() => {
-        // gustFloor() in weatherService.js garantisce raffiche >= velocità
-        // sul dato grezzo, ma qui sopra la velocità viene corretta (+0.5kn
-        // di taratura anemometro) SENZA correggere le raffiche: se il
-        // margine originale era piccolo, la raffica corretta può finire
-        // sotto la velocità corretta. Va riverificato con la velocità già
-        // corretta, non con quella grezza.
-        const speedKn = applyWindCorrection(wind.windSpeedKn);
-        return {
-          speedKn,
-          gustsKn: gustFloor(wind.windGustsKn, speedKn),
-          directionDeg: wind.windDirectionDeg,
-        };
-      })(),
+      wind: windPayload,
       sea: {
         waveHeightM: merged.waveHeightM,
         wavePeriodS: merged.wavePeriodS,
         waveDirectionDeg: merged.waveDirectionDeg,
         waveEnergyKJ,
         seaState,
+        ...(surfRating ? { surfRating } : {}),
         sources: {
           openMeteo: ecmwfMarine,
           copernicus: copernicusMarine,
