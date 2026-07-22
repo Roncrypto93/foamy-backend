@@ -66,20 +66,30 @@ function roundTo(value, decimals) {
 }
 
 // Livelli in ordine crescente di qualità — l'indice determina bump/tetto.
-const SURF_RATING_LEVELS = ["Scarsa", "Discreta", "Buona", "Ottima", "Perfetto"];
+// "Flat" è il pavimento assoluto (vedi SURF_FLAT_THRESHOLD_M sotto), non
+// compare mai nella tabella base: è un controllo preliminare sulla sola
+// altezza, indipendente dal periodo.
+const SURF_RATING_LEVELS = ["Flat", "Bad", "Fair", "Good", "Great", "Perfect"];
+
+// Sotto questa altezza il mare è "piatto" a prescindere dal periodo — non
+// ha senso applicare la tabella altezza×periodo, che presuppone comunque
+// un minimo di swell riconoscibile.
+const SURF_FLAT_THRESHOLD_M = 0.2;
 
 // Tabella base altezza onda × periodo, calibrata sul Mediterraneo (non la
 // logica oceanica standard tipo Surfline: qui 7s è già periodo "alto", il
 // Mediterraneo raramente supera 9-10s). Fasce: limite superiore escluso,
 // limite inferiore incluso — es. 0.5m cade nella riga "0.5-0.8m", non
-// "0.3-0.5m"; 5.5s cade in "5.5-7s", non "4-5.5s".
+// "0.3-0.5m"; 5.5s cade in "5.5-7s", non "4-5.5s". La riga "<0.3m" è di
+// fatto raggiunta solo per altezze tra SURF_FLAT_THRESHOLD_M e 0.3m, dato
+// che sotto la soglia si esce prima con "Flat".
 const SURF_RATING_BASE_TABLE = [
-  // <4s          4-5.5s      5.5-7s      7-9s          >9s
-  ["Scarsa", "Scarsa", "Scarsa", "Discreta", "Buona"], // <0.3m
-  ["Scarsa", "Scarsa", "Discreta", "Buona", "Buona"], // 0.3-0.5m
-  ["Scarsa", "Discreta", "Buona", "Ottima", "Ottima"], // 0.5-0.8m
-  ["Discreta", "Buona", "Ottima", "Ottima", "Ottima"], // 0.8-1.2m
-  ["Discreta", "Buona", "Ottima", "Ottima", "Ottima"], // >1.2m
+  // <4s     4-5.5s    5.5-7s    7-9s      >9s
+  ["Bad", "Bad", "Bad", "Fair", "Good"], // <0.3m
+  ["Bad", "Bad", "Fair", "Good", "Good"], // 0.3-0.5m
+  ["Bad", "Fair", "Good", "Great", "Great"], // 0.5-0.8m
+  ["Fair", "Good", "Great", "Great", "Great"], // 0.8-1.2m
+  ["Fair", "Good", "Great", "Great", "Great"], // >1.2m
 ];
 
 function surfHeightRowIndex(waveHeightM) {
@@ -103,9 +113,9 @@ function bumpSurfLevel(level) {
   return SURF_RATING_LEVELS[Math.min(idx + 1, SURF_RATING_LEVELS.length - 1)];
 }
 
-// Non un tetto fisso ("mai sopra Buona") ma un declassamento di una
+// Non un tetto fisso ("mai sopra Good") ma un declassamento di una
 // posizione dal livello base — corretto dopo un caso reale (Otranto,
-// vento onshore >15kn su base già "Buona": col vecchio tetto non
+// vento onshore >15kn su base già "Good": col vecchio tetto non
 // succedeva nulla, che non è il comportamento voluto).
 function downgradeSurfLevel(level) {
   const idx = SURF_RATING_LEVELS.indexOf(level);
@@ -145,30 +155,42 @@ function surfWindZoneEffect(windDirectionDeg, windSpeedKn, coastOrientationDeg) 
  * sopra per la tabella base e le zone vento.
  *
  * Non lancia mai un'eccezione:
- * - se manca altezza o periodo onda, non c'è punteggio possibile:
+ * - se manca l'altezza onda, non c'è punteggio possibile:
  *   { rating: null, baseLevel: null, windEffect: "unavailable" }.
+ * - se l'altezza è sotto SURF_FLAT_THRESHOLD_M il periodo non serve (mare
+ *   piatto a prescindere): { rating: "Flat", baseLevel: "Flat", ... }.
+ * - se manca il periodo (e l'altezza non è già sotto soglia flat), stesso
+ *   esito del primo caso: non c'è punteggio possibile.
  * - se manca vento (direzione/velocità) o coastOrientationDeg dello spot,
  *   salta i passi 2-3 e ritorna solo il livello base:
  *   { rating: baseLevel, baseLevel, windEffect: "unavailable" }.
  *
- * "Scarsa" non viene mai modificata da bump/declassamento (resta sempre
- * Scarsa) e "Perfetto" si raggiunge solo tramite bump, mai dalla tabella
- * base da sola (il valore massimo in tabella è "Ottima"). Vento onshore/
- * cross-onshore >15kn declassa il livello base di UNA posizione (non un
- * tetto fisso a "Buona": un livello base già a "Buona" o sotto viene
- * comunque abbassato di uno, non lasciato invariato). `windEffect`
- * riflette l'effetto REALMENTE applicato al rating finale, non solo la
- * categoria teorica della zona vento: se "Scarsa" blocca un bump teorico,
- * il valore riportato è "none" — non "bump" — per evitare che un
- * consumatore a valle (es. un badge "vento favorevole" in UI) mostri un
- * effetto che in realtà non ha cambiato nulla.
+ * "Flat" e "Bad" non vengono mai modificati da bump/declassamento (restano
+ * sempre invariati) e "Perfect" si raggiunge solo tramite bump, mai dalla
+ * tabella base da sola (il valore massimo in tabella è "Great"). Vento
+ * onshore/cross-onshore >15kn declassa il livello base di UNA posizione
+ * (non un tetto fisso a "Good": un livello base già a "Good" o sotto viene
+ * comunque abbassato di uno, non lasciato invariato — tranne "Bad", che
+ * resta protetto come "Flat"). `windEffect` riflette l'effetto REALMENTE
+ * applicato al rating finale, non solo la categoria teorica della zona
+ * vento: se "Bad" blocca un bump teorico, il valore riportato è "none" —
+ * non "bump" — per evitare che un consumatore a valle (es. un badge
+ * "vento favorevole" in UI) mostri un effetto che in realtà non ha
+ * cambiato nulla.
  */
 function calculateSurfRating(waveHeightM, wavePeriodS, windSpeedKn, windDirectionDeg, coastOrientationDeg) {
-  if (waveHeightM == null || wavePeriodS == null) {
+  if (waveHeightM == null) {
     return { rating: null, baseLevel: null, windEffect: "unavailable" };
   }
 
-  const baseLevel = SURF_RATING_BASE_TABLE[surfHeightRowIndex(waveHeightM)][surfPeriodColIndex(wavePeriodS)];
+  let baseLevel;
+  if (waveHeightM < SURF_FLAT_THRESHOLD_M) {
+    baseLevel = "Flat";
+  } else if (wavePeriodS == null) {
+    return { rating: null, baseLevel: null, windEffect: "unavailable" };
+  } else {
+    baseLevel = SURF_RATING_BASE_TABLE[surfHeightRowIndex(waveHeightM)][surfPeriodColIndex(wavePeriodS)];
+  }
 
   if (windSpeedKn == null || windDirectionDeg == null || coastOrientationDeg == null) {
     return { rating: baseLevel, baseLevel, windEffect: "unavailable" };
@@ -178,7 +200,7 @@ function calculateSurfRating(waveHeightM, wavePeriodS, windSpeedKn, windDirectio
 
   let rating = baseLevel;
   let windEffect = "none";
-  if (baseLevel !== "Scarsa") {
+  if (baseLevel !== "Flat" && baseLevel !== "Bad") {
     if (zoneEffect === "bump") {
       rating = bumpSurfLevel(baseLevel);
       windEffect = "bump";

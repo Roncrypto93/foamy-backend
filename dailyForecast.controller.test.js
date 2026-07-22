@@ -83,10 +83,10 @@ describe("GET /api/forecast/:spotId/daily", () => {
     expect(day0.sea.waterTempC).toBe(24.3);
     expect(day0.sea.seaLevelM).toBe(0.12);
     // Punteggio surf: san-foca ha "wave" tra le discipline e
-    // coastOrientationDeg 70. baseLevel "Ottima" (1.4m/7s -> ">1.2m"x"7-9s"),
+    // coastOrientationDeg 70. baseLevel "Great" (1.4m/7s -> ">1.2m"x"7-9s"),
     // vento 315° a 12.5kn è cross-offshore (65° dall'offshore a 250°) ->
-    // bump -> "Perfetto".
-    expect(day0.sea.surfRating).toEqual({ rating: "Perfetto", baseLevel: "Ottima", windEffect: "bump" });
+    // bump -> "Perfect".
+    expect(day0.sea.surfRating).toEqual({ rating: "Perfect", baseLevel: "Great", windEffect: "bump" });
 
     const day2 = res.body.days[2];
     expect(day2.sea.copernicusDegraded).toBe(true);
@@ -99,15 +99,15 @@ describe("GET /api/forecast/:spotId/daily", () => {
     // energia primo punto: 1.1^2 * 6.5 * 10 = 78.65 -> 79. waveDirectionDeg
     // ora presente (mancava dalla risposta, bug trovato e corretto). Stesso
     // ragionamento del punteggio di day0 sopra ma con windChart[0]
-    // (10.2kn/310°, cross-offshore anche questo) -> baseLevel "Ottima"
-    // (1.1m/6.5s -> "0.8-1.2m"x"5.5-7s") -> bump -> "Perfetto".
+    // (10.2kn/310°, cross-offshore anche questo) -> baseLevel "Great"
+    // (1.1m/6.5s -> "0.8-1.2m"x"5.5-7s") -> bump -> "Perfect".
     expect(res.body.chart[0]).toEqual({
       time: "2026-07-14T00:00",
       waveHeightM: 1.1,
       wavePeriodS: 6.5,
       waveDirectionDeg: 55,
       waveEnergyKJ: 79,
-      surfRating: { rating: "Perfetto", baseLevel: "Ottima", windEffect: "bump" },
+      surfRating: { rating: "Perfect", baseLevel: "Great", windEffect: "bump" },
     });
 
     expect(res.body.windChart).toHaveLength(3);

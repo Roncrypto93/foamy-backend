@@ -103,14 +103,14 @@ describe("calculateSurfRating", () => {
   describe("tabella base (altezza x periodo)", () => {
     test.each([
       // altezza, periodo, livello atteso
-      [0.1, 3, "Scarsa"], // <0.3m, <4s
-      [0.1, 8, "Discreta"], // <0.3m, 7-9s
-      [0.1, 10, "Buona"], // <0.3m, >9s
-      [0.4, 6, "Discreta"], // 0.3-0.5m, 5.5-7s
-      [0.6, 5, "Discreta"], // 0.5-0.8m, 4-5.5s
-      [0.6, 6, "Buona"], // 0.5-0.8m, 5.5-7s
-      [1.0, 8, "Ottima"], // 0.8-1.2m, 7-9s
-      [1.5, 4, "Buona"], // >1.2m, 4-5.5s
+      [0.2, 3, "Bad"], // <0.3m, <4s (0.2m è il confine esatto: entra in tabella, non è ancora Flat)
+      [0.1, 8, "Fair"], // <0.3m, 7-9s
+      [0.1, 10, "Good"], // <0.3m, >9s
+      [0.4, 6, "Fair"], // 0.3-0.5m, 5.5-7s
+      [0.6, 5, "Fair"], // 0.5-0.8m, 4-5.5s
+      [0.6, 6, "Good"], // 0.5-0.8m, 5.5-7s
+      [1.0, 8, "Great"], // 0.8-1.2m, 7-9s
+      [1.5, 4, "Good"], // >1.2m, 4-5.5s
     ])("altezza %sm, periodo %ss -> livello base %s (nessun vento fornito)", (h, p, expected) => {
       const result = calculateSurfRating(h, p, null, null, null);
       expect(result.baseLevel).toBe(expected);
@@ -120,38 +120,58 @@ describe("calculateSurfRating", () => {
 
     test("confini esatti altezza: 0.3/0.5/0.8/1.2 cadono nella fascia superiore (limite incluso)", () => {
       // Stesso periodo (5s, fascia "4-5.5s") per isolare solo il confine altezza.
-      expect(calculateSurfRating(0.3, 5, null, null, null).baseLevel).toBe("Discreta"); // entra in "0.3-0.5m", non più "<0.3m"
-      expect(calculateSurfRating(0.5, 5, null, null, null).baseLevel).toBe("Discreta"); // entra in "0.5-0.8m", non "0.3-0.5m"
-      expect(calculateSurfRating(0.8, 5, null, null, null).baseLevel).toBe("Buona");
-      expect(calculateSurfRating(1.2, 5, null, null, null).baseLevel).toBe("Buona");
+      expect(calculateSurfRating(0.3, 5, null, null, null).baseLevel).toBe("Fair"); // entra in "0.3-0.5m", non più "<0.3m"
+      expect(calculateSurfRating(0.5, 5, null, null, null).baseLevel).toBe("Fair"); // entra in "0.5-0.8m", non "0.3-0.5m"
+      expect(calculateSurfRating(0.8, 5, null, null, null).baseLevel).toBe("Good");
+      expect(calculateSurfRating(1.2, 5, null, null, null).baseLevel).toBe("Good");
     });
 
     test("confini esatti periodo: 4/5.5/7/9 cadono nella fascia superiore (limite incluso)", () => {
       // Stessa altezza (0.6m, fascia "0.5-0.8m") per isolare solo il confine periodo.
-      expect(calculateSurfRating(0.6, 4, null, null, null).baseLevel).toBe("Discreta");
-      expect(calculateSurfRating(0.6, 5.5, null, null, null).baseLevel).toBe("Buona");
-      expect(calculateSurfRating(0.6, 7, null, null, null).baseLevel).toBe("Ottima");
-      expect(calculateSurfRating(0.6, 9, null, null, null).baseLevel).toBe("Ottima");
+      expect(calculateSurfRating(0.6, 4, null, null, null).baseLevel).toBe("Fair");
+      expect(calculateSurfRating(0.6, 5.5, null, null, null).baseLevel).toBe("Good");
+      expect(calculateSurfRating(0.6, 7, null, null, null).baseLevel).toBe("Great");
+      expect(calculateSurfRating(0.6, 9, null, null, null).baseLevel).toBe("Great");
+    });
+  });
+
+  describe("livello Flat (soglia altezza, indipendente dal periodo)", () => {
+    test("sotto 0.2m è sempre Flat, qualsiasi periodo (anche mancante)", () => {
+      expect(calculateSurfRating(0.19, 3, null, null, null)).toEqual({ rating: "Flat", baseLevel: "Flat", windEffect: "unavailable" });
+      expect(calculateSurfRating(0.05, 12, null, null, null)).toEqual({ rating: "Flat", baseLevel: "Flat", windEffect: "unavailable" });
+      expect(calculateSurfRating(0.1, null, null, null, null)).toEqual({ rating: "Flat", baseLevel: "Flat", windEffect: "unavailable" });
+    });
+
+    test("confine esatto: 0.2m entra in tabella (Bad), non è ancora Flat", () => {
+      expect(calculateSurfRating(0.2, 3, null, null, null).baseLevel).toBe("Bad");
+    });
+
+    test("Flat non viene mai modificato dal vento, nemmeno con bump teorico (offshore calmo)", () => {
+      const result = calculateSurfRating(0.1, 3, 3, 90, 90); // <5kn -> bump teorico su qualsiasi direzione
+      expect(result).toEqual({ rating: "Flat", baseLevel: "Flat", windEffect: "none" });
     });
   });
 
   describe("dati mancanti: mai un crash", () => {
-    test("altezza o periodo mancanti -> rating e baseLevel null, windEffect unavailable", () => {
+    test("altezza mancante -> rating e baseLevel null, windEffect unavailable", () => {
       expect(calculateSurfRating(null, 6, 10, 90, 90)).toEqual({ rating: null, baseLevel: null, windEffect: "unavailable" });
+    });
+
+    test("periodo mancante con altezza sopra soglia flat -> rating e baseLevel null (serve il periodo per la tabella)", () => {
       expect(calculateSurfRating(0.6, null, 10, 90, 90)).toEqual({ rating: null, baseLevel: null, windEffect: "unavailable" });
     });
 
     test("vento o coastOrientationDeg mancanti -> solo livello base, windEffect unavailable", () => {
       const withoutWind = calculateSurfRating(0.6, 6, null, null, null);
-      expect(withoutWind).toEqual({ rating: "Buona", baseLevel: "Buona", windEffect: "unavailable" });
+      expect(withoutWind).toEqual({ rating: "Good", baseLevel: "Good", windEffect: "unavailable" });
 
       const withoutOrientation = calculateSurfRating(0.6, 6, 10, 90, null);
-      expect(withoutOrientation).toEqual({ rating: "Buona", baseLevel: "Buona", windEffect: "unavailable" });
+      expect(withoutOrientation).toEqual({ rating: "Good", baseLevel: "Good", windEffect: "unavailable" });
     });
   });
 
   describe("zona vento rispetto alla costa (confini a 45°/90°/135°)", () => {
-    // Altezza/periodo fissi con baseLevel "Ottima" (1.0m, 6s -> 0.8-1.2m x
+    // Altezza/periodo fissi con baseLevel "Great" (1.0m, 6s -> 0.8-1.2m x
     // 5.5-7s), così bump/declassamento sono entrambi ben visibili sul risultato.
     test.each([
       [0, "bump"], // offshore esatto (delta 0)
@@ -165,23 +185,23 @@ describe("calculateSurfRating", () => {
     ])("delta %s° dall'offshore, vento 10kn -> windEffect %s", (delta, expectedEffect) => {
       const windDirectionDeg = (OFFSHORE_FOR_COAST_E + delta) % 360;
       const result = calculateSurfRating(1.0, 6, 10, windDirectionDeg, COAST_E);
-      expect(result.baseLevel).toBe("Ottima");
+      expect(result.baseLevel).toBe("Great");
       expect(result.windEffect).toBe(expectedEffect);
     });
 
     test("stesso delta ma vento >15kn: cross-offshore (46°) passa da bump a none, cross-onshore/onshore (91°-180°) passano da none a declassamento di una posizione", () => {
       const crossOffshore = calculateSurfRating(1.0, 6, 20, (OFFSHORE_FOR_COAST_E + 46) % 360, COAST_E);
       expect(crossOffshore.windEffect).toBe("none");
-      expect(crossOffshore.rating).toBe("Ottima");
+      expect(crossOffshore.rating).toBe("Great");
 
-      // baseLevel "Ottima" (idx 3) -> declassato di una posizione -> "Buona" (idx 2).
+      // baseLevel "Great" (idx 4) -> declassato di una posizione -> "Good" (idx 3).
       const crossOnshore = calculateSurfRating(1.0, 6, 20, (OFFSHORE_FOR_COAST_E + 91) % 360, COAST_E);
       expect(crossOnshore.windEffect).toBe("cap");
-      expect(crossOnshore.rating).toBe("Buona");
+      expect(crossOnshore.rating).toBe("Good");
 
       const onshore = calculateSurfRating(1.0, 6, 20, (OFFSHORE_FOR_COAST_E + 180) % 360, COAST_E);
       expect(onshore.windEffect).toBe("cap");
-      expect(onshore.rating).toBe("Buona");
+      expect(onshore.rating).toBe("Good");
     });
   });
 
@@ -189,9 +209,9 @@ describe("calculateSurfRating", () => {
     test("< 5kn: bump garantito qualsiasi direzione, anche pieno onshore", () => {
       const fullOnshore = (OFFSHORE_FOR_COAST_E + 180) % 360;
       const result = calculateSurfRating(1.0, 6, 4.9, fullOnshore, COAST_E);
-      expect(result.baseLevel).toBe("Ottima");
+      expect(result.baseLevel).toBe("Great");
       expect(result.windEffect).toBe("bump");
-      expect(result.rating).toBe("Perfetto");
+      expect(result.rating).toBe("Perfect");
     });
 
     test("esattamente 5kn onshore: nessuna modifica (rientra nella fascia 5-15)", () => {
@@ -210,67 +230,74 @@ describe("calculateSurfRating", () => {
       const fullOnshore = (OFFSHORE_FOR_COAST_E + 180) % 360;
       const result = calculateSurfRating(1.0, 6, 15.1, fullOnshore, COAST_E);
       expect(result.windEffect).toBe("cap");
-      expect(result.rating).toBe("Buona"); // "Ottima" (idx 3) -1 -> "Buona" (idx 2)
+      expect(result.rating).toBe("Good"); // "Great" (idx 4) -1 -> "Good" (idx 3)
     });
   });
 
-  describe("regole speciali su Scarsa/Perfetto", () => {
-    test("Scarsa non viene mai modificata, anche con vento offshore calmo (bump teorico bloccato)", () => {
-      const result = calculateSurfRating(0.1, 3, 3, OFFSHORE_FOR_COAST_E, COAST_E); // <5kn -> bump teorico
-      expect(result.baseLevel).toBe("Scarsa");
-      expect(result.rating).toBe("Scarsa");
+  describe("regole speciali su Flat/Bad/Perfect", () => {
+    test("Bad non viene mai modificato, anche con vento offshore calmo (bump teorico bloccato)", () => {
+      const result = calculateSurfRating(0.25, 3, 3, OFFSHORE_FOR_COAST_E, COAST_E); // <5kn -> bump teorico, altezza sopra soglia flat
+      expect(result.baseLevel).toBe("Bad");
+      expect(result.rating).toBe("Bad");
       expect(result.windEffect).toBe("none"); // il bump non ha avuto alcun effetto reale
     });
 
-    test("Perfetto è raggiungibile solo tramite bump, mai dalla tabella base da sola", () => {
-      // Non esiste alcuna cella della tabella base che valga "Perfetto".
+    test("Flat non viene mai modificato, anche con vento offshore calmo (bump teorico bloccato)", () => {
+      const result = calculateSurfRating(0.1, 3, 3, OFFSHORE_FOR_COAST_E, COAST_E); // <5kn -> bump teorico
+      expect(result.baseLevel).toBe("Flat");
+      expect(result.rating).toBe("Flat");
+      expect(result.windEffect).toBe("none");
+    });
+
+    test("Perfect è raggiungibile solo tramite bump, mai dalla tabella base da sola", () => {
+      // Non esiste alcuna cella della tabella base che valga "Perfect".
       for (let h = 0; h < 2; h += 0.1) {
         for (let p = 1; p < 12; p += 0.5) {
-          expect(calculateSurfRating(h, p, null, null, null).baseLevel).not.toBe("Perfetto");
+          expect(calculateSurfRating(h, p, null, null, null).baseLevel).not.toBe("Perfect");
         }
       }
     });
 
-    test("il declassamento si applica sempre di una posizione, anche se il livello base è già 'Buona' o sotto (non un tetto fisso)", () => {
+    test("il declassamento si applica sempre di una posizione, anche se il livello base è già 'Good' o sotto (non un tetto fisso)", () => {
       // Caso reale che ha fatto correggere la regola: Otranto, 1.04m/4.7s
-      // (baseLevel "Buona"), vento onshore forte — col vecchio "tetto
-      // massimo Buona" non succedeva nulla (era già a Buona). Ora scende
-      // di una posizione comunque, come qualsiasi altro livello.
+      // (baseLevel "Good"), vento onshore forte — col vecchio "tetto
+      // massimo Good" non succedeva nulla (era già a Good). Ora scende
+      // di una posizione comunque, come qualsiasi altro livello non protetto.
       const fullOnshore = (OFFSHORE_FOR_COAST_E + 180) % 360;
 
-      const fromBuona = calculateSurfRating(0.6, 6, 20, fullOnshore, COAST_E); // baseLevel "Buona"
-      expect(fromBuona.baseLevel).toBe("Buona");
-      expect(fromBuona.windEffect).toBe("cap");
-      expect(fromBuona.rating).toBe("Discreta");
+      const fromGood = calculateSurfRating(0.6, 6, 20, fullOnshore, COAST_E); // baseLevel "Good"
+      expect(fromGood.baseLevel).toBe("Good");
+      expect(fromGood.windEffect).toBe("cap");
+      expect(fromGood.rating).toBe("Fair");
 
-      const fromDiscreta = calculateSurfRating(0.6, 5, 20, fullOnshore, COAST_E); // baseLevel "Discreta"
-      expect(fromDiscreta.baseLevel).toBe("Discreta");
-      expect(fromDiscreta.windEffect).toBe("cap");
-      expect(fromDiscreta.rating).toBe("Scarsa");
+      const fromFair = calculateSurfRating(0.6, 5, 20, fullOnshore, COAST_E); // baseLevel "Fair"
+      expect(fromFair.baseLevel).toBe("Fair");
+      expect(fromFair.windEffect).toBe("cap");
+      expect(fromFair.rating).toBe("Bad");
     });
   });
 
   describe("i 3 casi di verifica finale concordati con l'utente", () => {
-    test("caso 1: 0.5m / 5s / offshore >=5kn -> base Discreta, bump a Buona", () => {
+    test("caso 1: 0.5m / 5s / offshore >=5kn -> base Fair, bump a Good", () => {
       // coastOrientationDeg 0 (N) -> offshore 180 (S): vento da 180° è offshore puro (delta 0).
       const result = calculateSurfRating(0.5, 5, 10, 180, 0);
-      expect(result.baseLevel).toBe("Discreta");
+      expect(result.baseLevel).toBe("Fair");
       expect(result.windEffect).toBe("bump");
-      expect(result.rating).toBe("Buona");
+      expect(result.rating).toBe("Good");
     });
 
-    test("caso 2: 1m / ~6s / onshore forte (>15kn) -> Buona, declassata di una posizione da Ottima (non un tetto fisso)", () => {
+    test("caso 2: 1m / ~6s / onshore forte (>15kn) -> Good, declassata di una posizione da Great (non un tetto fisso)", () => {
       // coastOrientationDeg 0 (N) -> onshore = vento da 0° (N), pieno onshore.
       const result = calculateSurfRating(1, 6, 20, 0, 0);
-      expect(result.baseLevel).toBe("Ottima");
+      expect(result.baseLevel).toBe("Great");
       expect(result.windEffect).toBe("cap");
-      expect(result.rating).toBe("Buona"); // Ottima (idx 3) - 1 posizione -> Buona (idx 2)
+      expect(result.rating).toBe("Good"); // Great (idx 4) - 1 posizione -> Good (idx 3)
     });
 
-    test("caso 3: 0.2m / 3s / vento calmo <5kn -> resta Scarsa (il bump non si applica: Scarsa è protetta)", () => {
+    test("caso 3: 0.2m / 3s / vento calmo <5kn -> resta Bad (il bump non si applica: Bad è protetto)", () => {
       const result = calculateSurfRating(0.2, 3, 3, 0, 0);
-      expect(result.baseLevel).toBe("Scarsa");
-      expect(result.rating).toBe("Scarsa");
+      expect(result.baseLevel).toBe("Bad");
+      expect(result.rating).toBe("Bad");
     });
   });
 });
