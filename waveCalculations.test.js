@@ -152,7 +152,7 @@ describe("calculateSurfRating", () => {
 
   describe("zona vento rispetto alla costa (confini a 45°/90°/135°)", () => {
     // Altezza/periodo fissi con baseLevel "Ottima" (1.0m, 6s -> 0.8-1.2m x
-    // 5.5-7s), così bump/tetto sono entrambi ben visibili sul risultato.
+    // 5.5-7s), così bump/declassamento sono entrambi ben visibili sul risultato.
     test.each([
       [0, "bump"], // offshore esatto (delta 0)
       [45, "bump"], // confine offshore incluso
@@ -169,11 +169,12 @@ describe("calculateSurfRating", () => {
       expect(result.windEffect).toBe(expectedEffect);
     });
 
-    test("stesso delta ma vento >15kn: cross-offshore (46°) passa da bump a none, cross-onshore/onshore (91°-180°) passano da none a cap", () => {
+    test("stesso delta ma vento >15kn: cross-offshore (46°) passa da bump a none, cross-onshore/onshore (91°-180°) passano da none a declassamento di una posizione", () => {
       const crossOffshore = calculateSurfRating(1.0, 6, 20, (OFFSHORE_FOR_COAST_E + 46) % 360, COAST_E);
       expect(crossOffshore.windEffect).toBe("none");
       expect(crossOffshore.rating).toBe("Ottima");
 
+      // baseLevel "Ottima" (idx 3) -> declassato di una posizione -> "Buona" (idx 2).
       const crossOnshore = calculateSurfRating(1.0, 6, 20, (OFFSHORE_FOR_COAST_E + 91) % 360, COAST_E);
       expect(crossOnshore.windEffect).toBe("cap");
       expect(crossOnshore.rating).toBe("Buona");
@@ -205,11 +206,11 @@ describe("calculateSurfRating", () => {
       expect(result.windEffect).toBe("none");
     });
 
-    test("appena sopra 15kn onshore: scatta il tetto", () => {
+    test("appena sopra 15kn onshore: scatta il declassamento di una posizione", () => {
       const fullOnshore = (OFFSHORE_FOR_COAST_E + 180) % 360;
       const result = calculateSurfRating(1.0, 6, 15.1, fullOnshore, COAST_E);
       expect(result.windEffect).toBe("cap");
-      expect(result.rating).toBe("Buona");
+      expect(result.rating).toBe("Buona"); // "Ottima" (idx 3) -1 -> "Buona" (idx 2)
     });
   });
 
@@ -230,13 +231,22 @@ describe("calculateSurfRating", () => {
       }
     });
 
-    test("un tetto che non abbassa nulla (baseLevel già <= Buona) riporta windEffect none, non cap", () => {
-      // 0.6m/6s -> baseLevel "Buona", già uguale al tetto: il cap non cambia nulla.
+    test("il declassamento si applica sempre di una posizione, anche se il livello base è già 'Buona' o sotto (non un tetto fisso)", () => {
+      // Caso reale che ha fatto correggere la regola: Otranto, 1.04m/4.7s
+      // (baseLevel "Buona"), vento onshore forte — col vecchio "tetto
+      // massimo Buona" non succedeva nulla (era già a Buona). Ora scende
+      // di una posizione comunque, come qualsiasi altro livello.
       const fullOnshore = (OFFSHORE_FOR_COAST_E + 180) % 360;
-      const result = calculateSurfRating(0.6, 6, 20, fullOnshore, COAST_E);
-      expect(result.baseLevel).toBe("Buona");
-      expect(result.rating).toBe("Buona");
-      expect(result.windEffect).toBe("none");
+
+      const fromBuona = calculateSurfRating(0.6, 6, 20, fullOnshore, COAST_E); // baseLevel "Buona"
+      expect(fromBuona.baseLevel).toBe("Buona");
+      expect(fromBuona.windEffect).toBe("cap");
+      expect(fromBuona.rating).toBe("Discreta");
+
+      const fromDiscreta = calculateSurfRating(0.6, 5, 20, fullOnshore, COAST_E); // baseLevel "Discreta"
+      expect(fromDiscreta.baseLevel).toBe("Discreta");
+      expect(fromDiscreta.windEffect).toBe("cap");
+      expect(fromDiscreta.rating).toBe("Scarsa");
     });
   });
 
@@ -249,12 +259,12 @@ describe("calculateSurfRating", () => {
       expect(result.rating).toBe("Buona");
     });
 
-    test("caso 2: 1m / ~6s / onshore forte (>15kn) -> Buona, il tetto interviene (non Ottima)", () => {
+    test("caso 2: 1m / ~6s / onshore forte (>15kn) -> Buona, declassata di una posizione da Ottima (non un tetto fisso)", () => {
       // coastOrientationDeg 0 (N) -> onshore = vento da 0° (N), pieno onshore.
       const result = calculateSurfRating(1, 6, 20, 0, 0);
       expect(result.baseLevel).toBe("Ottima");
       expect(result.windEffect).toBe("cap");
-      expect(result.rating).toBe("Buona");
+      expect(result.rating).toBe("Buona"); // Ottima (idx 3) - 1 posizione -> Buona (idx 2)
     });
 
     test("caso 3: 0.2m / 3s / vento calmo <5kn -> resta Scarsa (il bump non si applica: Scarsa è protetta)", () => {

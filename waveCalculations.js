@@ -103,10 +103,13 @@ function bumpSurfLevel(level) {
   return SURF_RATING_LEVELS[Math.min(idx + 1, SURF_RATING_LEVELS.length - 1)];
 }
 
-function capSurfLevel(level, ceiling) {
+// Non un tetto fisso ("mai sopra Buona") ma un declassamento di una
+// posizione dal livello base — corretto dopo un caso reale (Otranto,
+// vento onshore >15kn su base già "Buona": col vecchio tetto non
+// succedeva nulla, che non è il comportamento voluto).
+function downgradeSurfLevel(level) {
   const idx = SURF_RATING_LEVELS.indexOf(level);
-  const ceilingIdx = SURF_RATING_LEVELS.indexOf(ceiling);
-  return SURF_RATING_LEVELS[Math.min(idx, ceilingIdx)];
+  return SURF_RATING_LEVELS[Math.max(idx - 1, 0)];
 }
 
 // Differenza angolare firmata tra due direzioni (0-360°), normalizzata in
@@ -148,15 +151,17 @@ function surfWindZoneEffect(windDirectionDeg, windSpeedKn, coastOrientationDeg) 
  *   salta i passi 2-3 e ritorna solo il livello base:
  *   { rating: baseLevel, baseLevel, windEffect: "unavailable" }.
  *
- * "Scarsa" non viene mai modificata da bump/tetto (resta sempre Scarsa) e
- * "Perfetto" si raggiunge solo tramite bump, mai dalla tabella base da
- * sola (il valore massimo in tabella è "Ottima"). `windEffect` riflette
- * l'effetto REALMENTE applicato al rating finale, non solo la categoria
- * teorica della zona vento: se "Scarsa" blocca un bump, o se un tetto non
- * abbassa nulla perché il livello base era già sotto il tetto, il valore
- * riportato è "none" — non "bump"/"cap" — per evitare che un consumatore
- * a valle (es. un badge "vento favorevole" in UI) mostri un effetto che
- * in realtà non ha cambiato nulla.
+ * "Scarsa" non viene mai modificata da bump/declassamento (resta sempre
+ * Scarsa) e "Perfetto" si raggiunge solo tramite bump, mai dalla tabella
+ * base da sola (il valore massimo in tabella è "Ottima"). Vento onshore/
+ * cross-onshore >15kn declassa il livello base di UNA posizione (non un
+ * tetto fisso a "Buona": un livello base già a "Buona" o sotto viene
+ * comunque abbassato di uno, non lasciato invariato). `windEffect`
+ * riflette l'effetto REALMENTE applicato al rating finale, non solo la
+ * categoria teorica della zona vento: se "Scarsa" blocca un bump teorico,
+ * il valore riportato è "none" — non "bump" — per evitare che un
+ * consumatore a valle (es. un badge "vento favorevole" in UI) mostri un
+ * effetto che in realtà non ha cambiato nulla.
  */
 function calculateSurfRating(waveHeightM, wavePeriodS, windSpeedKn, windDirectionDeg, coastOrientationDeg) {
   if (waveHeightM == null || wavePeriodS == null) {
@@ -178,9 +183,9 @@ function calculateSurfRating(waveHeightM, wavePeriodS, windSpeedKn, windDirectio
       rating = bumpSurfLevel(baseLevel);
       windEffect = "bump";
     } else if (zoneEffect === "cap") {
-      const capped = capSurfLevel(baseLevel, "Buona");
-      if (capped !== baseLevel) {
-        rating = capped;
+      const downgraded = downgradeSurfLevel(baseLevel);
+      if (downgraded !== baseLevel) {
+        rating = downgraded;
         windEffect = "cap";
       }
     }
