@@ -1,12 +1,15 @@
 /**
- * Database mock degli spot per l'MVP di Foamy — Puglia (20 spot) e Sicilia
- * (56 spot, aggiunti in una seconda fase).
+ * Database mock degli spot per l'MVP di Foamy — Puglia (20 spot), Sicilia
+ * (56 spot, aggiunti in una seconda fase) ed Emilia-Romagna (20 spot,
+ * Riviera Romagnola, aggiunti in una terza fase).
  *
- * region: "Puglia" | "Sicilia" — aggiunto anche retroattivamente ai 20 spot
- * Puglia già esistenti (solo dato, nessun'altra modifica ai loro valori).
- * Risolve anche l'ambiguità del campo `coast`: "Ionio" è usato sia per la
- * Puglia (Salento ionico) sia per la Sicilia (costa orientale) — sono mari
- * diversi nella realtà, `region` li distingue.
+ * region: "Puglia" | "Sicilia" | "Emilia-Romagna" — aggiunto anche
+ * retroattivamente ai 20 spot Puglia già esistenti (solo dato, nessun'altra
+ * modifica ai loro valori). Risolve anche l'ambiguità del campo `coast`:
+ * "Ionio" è usato sia per la Puglia (Salento ionico) sia per la Sicilia
+ * (costa orientale) — sono mari diversi nella realtà, `region` li
+ * distingue. Emilia-Romagna usa sempre "Adriatico" per `coast` (nessuna
+ * ambiguità, tutta la costa della regione è sull'Adriatico).
  *
  * coastOrientationDeg (tutti i 20 spot Puglia): la direzione (0-360°,
  * 0=Nord) verso cui guarda la spiaggia, cioè la direzione "onshore" da
@@ -49,6 +52,24 @@
  * locali kite). Dove le note non menzionavano scuole/strutture specifiche,
  * il campo lo segnala esplicitamente invece di inventarle — a differenza
  * della Puglia, qui non è stata fatta una ricerca dedicata sulle strutture.
+ *
+ * Emilia-Romagna (20 spot, Riviera Romagnola): nomi e webcam forniti
+ * dall'utente (file Excel), coordinate stimate via ricerca (riviera-surf.com
+ * come fonte principale per l'identificazione dei singoli spot, incrociata
+ * con OpenStreetMap/Windy/harbourmaps per i punti più verificabili) —
+ * `coordsSource: "estimate"` su tutti, stesso livello di cautela di Sicilia.
+ * `disciplines`: tutti "wave" (sono spot da surf onda, indicazione esplicita
+ * dell'utente), più "wind"/"kite" solo sui 2 spot con evidenza diretta e
+ * indipendente (scuola/club noto sul posto): Porto Corsini (Diga Nord) —
+ * Adriatico Wind Club, unica zona kite autorizzata dal Comune di Ravenna —
+ * e Cesenatico (Madonnina) — circolo vento-kite citato dalla stessa guida
+ * usata per le coordinate. Altri spot avevano indizi più deboli (scuole in
+ * zona ma non confermate sul singolo break) e sono stati lasciati solo
+ * "wave" per non indovinare. Nessun `coastOrientationDeg` per ora (come
+ * Sicilia): il punteggio surf è comunque disattivato lato frontend in
+ * questo momento. `spot_info` qui è intenzionalmente essenziale (richiesta
+ * esplicita dell'utente di "solo struttura base per ora", arricchimento
+ * tipo-Puglia rimandato a una fase successiva).
  */
 
 const SPOTS = [
@@ -760,6 +781,188 @@ const SPOTS = [
       fondale: "Reef roccioso",
       strutture: "Nessuna struttura verificata in questa ricerca",
       descrizione_tecnica: "Onda sinistra. Mareggiate da Nord-Ovest, lavora anche con vento leggero."
+    }
+  },
+
+  // ==================== EMILIA-ROMAGNA — Riviera Romagnola (20 spot) ====================
+  {
+    id: "casalborsetti-adria", name: "Casalborsetti (Adria)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.5592, lon: 12.2797, coordsSource: "estimate",
+    webcam_banner: null,
+    spot_info: {
+      fondale: "Sabbia, fondale basso e digradante (tipico della costa ravennate)",
+      strutture: "Zona campeggi (es. Villaggio Camping Adria) come punto di accesso alla spiaggia — nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Spiaggia libera a nord di Casalborsetti, break non ancora documentato in dettaglio."
+    }
+  },
+  {
+    id: "casalborsetti-carabiniere", name: "Casalborsetti (Carabiniere)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.5380, lon: 12.2810, coordsSource: "estimate",
+    webcam_banner: null,
+    spot_info: {
+      fondale: "Sabbia, fondale basso e digradante",
+      strutture: "Nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Tra Casalborsetti e Marina Romea, vicino alla foce del Lamone; break non ancora documentato in dettaglio."
+    }
+  },
+  {
+    id: "marina-romea-lamone", name: "Marina Romea (Lamone)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.5271, lon: 12.2810, coordsSource: "estimate",
+    webcam_banner: null,
+    spot_info: {
+      fondale: "Sabbia, foce del fiume Lamone nelle vicinanze",
+      strutture: "Nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Break alla foce del Lamone, sul margine nord di Marina Romea."
+    }
+  },
+  {
+    id: "porto-corsini-diga-nord", name: "Porto Corsini (Diga Nord)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave", "wind", "kite"], lat: 44.4977, lon: 12.3045, coordsSource: "estimate",
+    webcam_banner: { provider: "Adriatico Wind Club", url: "https://www.adriaticowindclub.com/webcam" },
+    spot_info: {
+      fondale: "Scogliera artificiale (diga foranea del porto di Ravenna)",
+      strutture: "Adriatico Wind Club opera direttamente su questo tratto — unica zona kitesurf autorizzata dal Comune di Ravenna",
+      descrizione_tecnica: "Diga foranea nord del porto di Ravenna, break utilizzato anche per wind/kite."
+    }
+  },
+  {
+    id: "marina-di-ravenna-diga-sud", name: "Marina di Ravenna (Diga Sud)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.4837, lon: 12.2914, coordsSource: "estimate",
+    webcam_banner: { provider: "IlMeteo.it", url: "https://www.ilmeteo.it/webcam/Marina+di+Ravenna" },
+    spot_info: {
+      fondale: "Scogliera artificiale (diga foranea, lato canale portuale)",
+      strutture: "Nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Diga foranea sud, di fronte al canale-porto di Ravenna, lato opposto alla Diga Nord."
+    }
+  },
+  {
+    id: "punta-marina-kamala", name: "Punta Marina (Kamala)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.4390, lon: 12.2965, coordsSource: "estimate",
+    webcam_banner: { provider: "IlMeteo.it", url: "https://www.ilmeteo.it/webcam/Punta+Marina" },
+    spot_info: {
+      fondale: "Sabbia",
+      strutture: "Bagno Kamala come riferimento sulla spiaggia — nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Break davanti allo stabilimento Kamala, a Punta Marina Terme."
+    }
+  },
+  {
+    id: "lido-di-dante", name: "Lido di Dante (Dante)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.3700, lon: 12.3230, coordsSource: "estimate",
+    webcam_banner: null,
+    spot_info: {
+      fondale: "Sabbia, zona dunale/pineta",
+      strutture: "Nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Tratto meridionale di Lido di Dante, verso la riserva dunale e la foce del Bevano."
+    }
+  },
+  {
+    id: "lido-di-classe-go-go", name: "Lido di Classe (Go-Go)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.3305, lon: 12.3335, coordsSource: "estimate",
+    webcam_banner: { provider: "Hotel Krone", url: "https://webcam.kronehotel.it:1027/cgi-bin/guestimage.html" },
+    spot_info: {
+      fondale: "Sabbia",
+      strutture: "Bagno Go-Go come riferimento sulla spiaggia — nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Break davanti allo stabilimento Go-Go, a Lido di Classe."
+    }
+  },
+  {
+    id: "milano-marittima-mokambo", name: "Milano Marittima (Mokambo)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.3150, lon: 12.3440, coordsSource: "estimate",
+    webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/it/webcam/italia/emilia-romagna/ravenna/milano-marittima.html" },
+    spot_info: {
+      fondale: "Sabbia",
+      strutture: "Nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Tratto nord di Milano Marittima, verso il ponte per Lido di Savio."
+    }
+  },
+  {
+    id: "milano-marittima-canalino", name: "Milano Marittima (Canalino)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.2809, lon: 12.3546, coordsSource: "estimate",
+    webcam_banner: null,
+    spot_info: {
+      fondale: "Sabbia, imboccatura del canale delle saline",
+      strutture: "Punto noto anche per wind/kite nella zona del canale, non ancora confermato per questo break specifico",
+      descrizione_tecnica: "Break all'imboccatura del piccolo canale ('Canalino') sul lungomare di Milano Marittima."
+    }
+  },
+  {
+    id: "cervia-porto", name: "Cervia (Porto)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.2683, lon: 12.3615, coordsSource: "estimate",
+    webcam_banner: { provider: "Circolo Nautico Cervia", url: "https://www.circolonauticocervia.it/webcam-cervia-milano-marittima/" },
+    spot_info: {
+      fondale: "Sabbia/scogliera, imboccatura del porto canale",
+      strutture: "Zona con scuole di kite/windsurf nei dintorni (lato Milano Marittima), non ancora confermate per questo break specifico",
+      descrizione_tecnica: "Break all'imboccatura del porto canale di Cervia."
+    }
+  },
+  {
+    id: "cesenatico-madonnina", name: "Cesenatico (Madonnina)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave", "wind", "kite"], lat: 44.2035, lon: 12.3965, coordsSource: "estimate",
+    webcam_banner: { provider: "Windsurf Cesenatico", url: "https://www.windsurfcesenatico.it/webcam" },
+    spot_info: {
+      fondale: "Sabbia",
+      strutture: "Vicino al circolo vento-kite locale, coerente con la webcam ospitata da Windsurf Cesenatico",
+      descrizione_tecnica: "Break a ovest del porto di Cesenatico, zona utilizzata anche per wind/kite."
+    }
+  },
+  {
+    id: "gatteo-mare-rubicone", name: "Gatteo Mare (Rubicone)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.1700, lon: 12.4400, coordsSource: "estimate",
+    webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/it/webcam/italia/emilia-romagna/forli-cesena/gatteo-a-mare.html" },
+    spot_info: {
+      fondale: "Sabbia, foce del fiume Rubicone",
+      strutture: "Nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Break alla foce del Rubicone, al confine tra Gatteo Mare e San Mauro Mare — qualità dell'acqua da verificare dopo piogge (foce di fiume)."
+    }
+  },
+  {
+    id: "rivabella-gange", name: "Rivabella (Gange)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.0860, lon: 12.5710, coordsSource: "estimate",
+    webcam_banner: null,
+    spot_info: {
+      fondale: "Sabbia",
+      strutture: "Nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "A nord del porto di Rimini, lato nord della foce del Marecchia."
+    }
+  },
+  {
+    id: "san-giuliano-mare-rimedio", name: "San Giuliano Mare (Rimedio)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.0764, lon: 12.5698, coordsSource: "estimate",
+    webcam_banner: null,
+    spot_info: {
+      fondale: "Sabbia/scogliera, lato darsena",
+      strutture: "Zona con scuole di wind/kite nella darsena di Rimini, non ancora confermate per questo break specifico",
+      descrizione_tecnica: "Break sul lato ovest della darsena (porto canale) di Rimini."
+    }
+  },
+  {
+    id: "rimini-rock-island", name: "Rimini (Rock Island)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.0807, lon: 12.5765, coordsSource: "estimate",
+    webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/webcam/italia/emilia-romagna/rimini/lungomare-di-rimini.html" },
+    spot_info: {
+      fondale: "Scogliera artificiale (molo di levante)",
+      strutture: "Riferimento noto come punto per wind/kite, non ancora confermato in una ricerca dedicata",
+      descrizione_tecnica: "Break sul Molo di Levante 'Capitan Giulietti', a sud del porto canale di Rimini."
+    }
+  },
+  {
+    id: "riccione-porto", name: "Riccione (Porto)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 44.0071, lon: 12.6570, coordsSource: "estimate",
+    webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/it/webcam/italia/emilia-romagna/rimini/riccione-maranobeach.html" },
+    spot_info: {
+      fondale: "Sabbia/scogliera, imboccatura del porto",
+      strutture: "Nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Break all'imboccatura del porto di Riccione."
+    }
+  },
+  {
+    id: "misano-osteria", name: "Misano Adriatico (Osteria)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 43.9860, lon: 12.7010, coordsSource: "estimate",
+    webcam_banner: { provider: "SkylineWebcams", url: "https://www.skylinewebcams.com/it/webcam/italia/emilia-romagna/rimini/misano-adriatico.html" },
+    spot_info: {
+      fondale: "Sabbia, banco sabbioso",
+      strutture: "Nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "Break non puntiforme: si estende su un tratto di spiaggia con più frangiflutti, zona Osteria/Nettuno di Misano."
+    }
+  },
+  {
+    id: "porto-verde-palazzoni", name: "Porto Verde (Palazzoni)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 43.9780, lon: 12.7160, coordsSource: "estimate",
+    webcam_banner: { provider: "Vedetta.org", url: "https://vedetta.org/webcam/italia/emilia-romagna/rimini/misano-adriatico-marina/" },
+    spot_info: {
+      fondale: "Sabbia",
+      strutture: "Marina di Portoverde nelle vicinanze — nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "A nord del piccolo porto di Portoverde, davanti al ristorante sulla spiaggia."
+    }
+  },
+  {
+    id: "porto-verde-oasi", name: "Porto Verde (Oasi)", coast: "Adriatico", region: "Emilia-Romagna", disciplines: ["wave"], lat: 43.9700, lon: 12.7200, coordsSource: "estimate",
+    webcam_banner: { provider: "Vedetta.org", url: "https://vedetta.org/webcam/italia/emilia-romagna/rimini/misano-adriatico-marina/" },
+    spot_info: {
+      fondale: "Sabbia, baietta riparata",
+      strutture: "Marina di Portoverde nelle vicinanze — nessuna ricerca dedicata sulle strutture in questa fase",
+      descrizione_tecnica: "A sud del piccolo porto di Portoverde, tra Misano e Cattolica."
     }
   },
 ];
